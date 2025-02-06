@@ -29,13 +29,11 @@
             }
             Console.WriteLine("}\nS = {s}\n");
             
-            
-            
-
-
-
+            // Initializing the grammar
             Grammar grammar = new Grammar(vN, vT, p, s);
-            for(int i = 0; i < 5; i++) Console.WriteLine(grammar.GenerateString());
+
+            // Generating the strings using the grammar definition
+            for(int i = 0; i < 5; i++) Console.WriteLine("\n#{0} Generated string: {1}", i + 1, grammar.GenerateString());
         }
     }
 }

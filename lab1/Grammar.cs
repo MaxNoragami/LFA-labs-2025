@@ -25,7 +25,7 @@ namespace lab1
         public string GenerateString()
         {
             StringBuilder current = new StringBuilder(S);
-
+            Console.Write("\n{0}", current);
             while(true)
             {
                 bool hasNonTerminal = false;
@@ -40,6 +40,9 @@ namespace lab1
                         string usedReplacement = productionRule[RandomNumberGenerator.GetInt32(productionRule.Count)];
                         current.Remove(i, symbol.Length);
                         current.Insert(i, usedReplacement);
+
+                        Console.Write(" ---> {0}", current);
+
                         break;
                     }
                 }
