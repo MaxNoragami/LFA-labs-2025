@@ -49,15 +49,29 @@ namespace lab1
                 string randomString = GenerateRandomString(vT);
                 Console.WriteLine("\n#{0} Random string: {1}\nAccepted by automaton: {2}", i + 1, randomString, finiteAutomaton.StringBelongToLanguage(randomString));
             }
-            Console.WriteLine("\n-------------------------------------------------------");
+            Console.WriteLine("\n-------------------------------------------------------\n");
 
             
-            
+            // Checking inputs from terminal if they can be obtained via the state transition from our Finite Automaton
+            do
+            {
+                Console.WriteLine("\nDo you wanna check some strings against the FA? (Y/n)");
+                string? confirmation = Console.ReadLine();
+                if(confirmation == null || confirmation.ToLower() == "n" || confirmation.ToLower() == "no") break;
+                
+                Console.Write("\nYour string: ");
+                string? input = Console.ReadLine();
+                if(input == null) continue;
+
+                Console.WriteLine("\nAccepted by automaton: {0}", finiteAutomaton.StringBelongToLanguage(input.ToLower()));
+            }while(true);
+
+            Console.WriteLine("\nThank you for executing me :3");
         }
 
+        // Just a random function, generating some random strings based on the alphabet
         static string GenerateRandomString(HashSet<char> vT)
         {
-            
             StringBuilder someString = new StringBuilder();
             for(int i = 0; i < RandomNumberGenerator.GetInt32(3, 10); i++)
             {

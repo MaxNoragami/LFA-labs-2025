@@ -26,7 +26,6 @@ namespace lab1
         public bool StringBelongToLanguage(String inputString)
         {
             var currentStates = new HashSet<string>(){Q0};
-            var chosenPath = new HashSet<char>();
             
             Console.Write("\nFA Check: ({0}) ", string.Join("", currentStates));
 
@@ -46,15 +45,14 @@ namespace lab1
                 }
             
                 currentStates = nextStates;
-                chosenPath = nextPath;
 
                 if(currentStates.Count == 0)
                 {
-                    Console.Write("-----> Invalid", string.Join("", chosenPath));
+                    Console.Write("-----> Invalid", string.Join("", nextPath));
                     return false;
                 }
 
-                Console.Write("--{0}--> ({1}) ", string.Join("", chosenPath), string.Join("", currentStates));
+                Console.Write("--{0}--> ({1}) ", string.Join("", nextPath), string.Join("", currentStates));
             }
             return currentStates.Contains(QF);
         }
