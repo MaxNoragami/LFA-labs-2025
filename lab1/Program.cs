@@ -1,4 +1,7 @@
-﻿namespace lab1
+﻿using System.Security.Cryptography;
+using System.Text;
+
+namespace lab1
 {
     class Program
     {
@@ -19,17 +22,48 @@
                 };
             string s = "S";
             
-            // Initializing the grammar
+            // Initializing the grammar & finiteAutomaton
             Grammar grammar = new Grammar(vN, vT, p, s);
+            FiniteAutomaton finiteAutomaton = grammar.ToFiniteAutomaton();
 
+            Console.WriteLine("My Variant's Grammar definition:");
             Console.WriteLine(grammar.ToString());
 
             // Generating the strings using the grammar definition
-            for(int i = 0; i < 5; i++) Console.WriteLine("\n#{0} Generated string: {1}", i + 1, grammar.GenerateString());
+            Console.WriteLine("------- Strings from L(G) -------");
+            for(int i = 0; i < 5; i++)
+            {
+                string generatedString = grammar.GenerateString();
+                Console.WriteLine("\n#{0} Generated string: {1}\nAccepted by automaton: {2}", i + 1, generatedString, finiteAutomaton.StringBelongToLanguage(generatedString));
+            }
+            Console.WriteLine("\n---------------------------------\n");
 
-            FiniteAutomaton finiteAutomaton = grammar.ToFiniteAutomaton();
-
+            Console.WriteLine("My Variant's Finite Automaton definition:");
             Console.WriteLine(finiteAutomaton.ToString());
+
+
+            // Checking some randomly generated strings if they can be obtained via the state transition from our Finite Automaton
+            Console.WriteLine("------- Checking some random strings against FA -------");
+            for(int i = 0; i < 5; i++)
+            {
+                string randomString = GenerateRandomString(vT);
+                Console.WriteLine("\n#{0} Random string: {1}\nAccepted by automaton: {2}", i + 1, randomString, finiteAutomaton.StringBelongToLanguage(randomString));
+            }
+            Console.WriteLine("\n-------------------------------------------------------");
+
+            
+            
         }
+
+        static string GenerateRandomString(HashSet<char> vT)
+        {
+            
+            StringBuilder someString = new StringBuilder();
+            for(int i = 0; i < RandomNumberGenerator.GetInt32(3, 10); i++)
+            {
+                someString.Append(vT.ElementAt(RandomNumberGenerator.GetInt32(0, vT.Count)));
+            }
+            return someString.ToString();
+        } 
     }
 }

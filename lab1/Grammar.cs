@@ -26,7 +26,7 @@ namespace lab1
         public string GenerateString()
         {
             StringBuilder current = new StringBuilder(S); // current = "aa"
-            Console.Write("\n{0}", current);
+            Console.Write("\nWord Build: {0}", current);
             while(true)
             {
                 bool hasNonTerminal = false;

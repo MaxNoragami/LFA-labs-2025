@@ -23,9 +23,40 @@ namespace lab1
             QF = qF;
         }
 
-        public bool StringBelongToLanguage(String inputS)
+        public bool StringBelongToLanguage(String inputString)
         {
-            return false;
+            var currentStates = new HashSet<string>(){Q0};
+            var chosenPath = new HashSet<char>();
+            
+            Console.Write("\nFA Check: ({0}) ", string.Join("", currentStates));
+
+            foreach(var letter in inputString)
+            {
+                var nextStates = new HashSet<string>();
+                var nextPath = new HashSet<char>();
+
+                foreach(var state in currentStates)
+                {
+                    if(Delta.Keys.Contains((state, letter)))
+                    {
+                        HashSet<string> possibleStates = [.. Delta[(state, letter)]];
+                        nextStates = nextStates.Concat(possibleStates).ToHashSet();
+                        nextPath.Add(letter);
+                    }
+                }
+            
+                currentStates = nextStates;
+                chosenPath = nextPath;
+
+                if(currentStates.Count == 0)
+                {
+                    Console.Write("-----> Invalid", string.Join("", chosenPath));
+                    return false;
+                }
+
+                Console.Write("--{0}--> ({1}) ", string.Join("", chosenPath), string.Join("", currentStates));
+            }
+            return currentStates.Contains(QF);
         }
 
         public override string ToString()
@@ -41,7 +72,7 @@ namespace lab1
             string q0Data = "q_0 = {" + Q0 + "}\n";
             string qFData = "q_F = {" + QF + "}\n";
 
-            return string.Format("\n{0}{1}{2}{3}{4}", qData, sigmaData, deltaData.ToString(), q0Data, qFData);
+            return string.Format("{0}{1}{2}{3}{4}", qData, sigmaData, deltaData.ToString(), q0Data, qFData);
         }
     }
 }
