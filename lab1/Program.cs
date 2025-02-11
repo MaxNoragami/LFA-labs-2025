@@ -18,22 +18,18 @@
                     {"Q", new List<string>() {"eQ", "fQ", "a"}}
                 };
             string s = "S";
-
-            // Outputing the definition to console
-            Console.WriteLine("V_n = {" + string.Join(", ", vN) + "}");
-            Console.WriteLine("V_t = {" + string.Join(", ", vT) + "}");
-            Console.WriteLine("P = {");
-            foreach(var pair in p)
-            {
-                Console.WriteLine("\t" + pair.Key + " ---> " + string.Join(" | ", pair.Value));
-            }
-            Console.WriteLine("}\nS = {s}\n");
             
             // Initializing the grammar
             Grammar grammar = new Grammar(vN, vT, p, s);
 
+            Console.WriteLine(grammar.ToString());
+
             // Generating the strings using the grammar definition
             for(int i = 0; i < 5; i++) Console.WriteLine("\n#{0} Generated string: {1}", i + 1, grammar.GenerateString());
+
+            FiniteAutomaton finiteAutomaton = grammar.ToFiniteAutomaton();
+
+            Console.WriteLine(finiteAutomaton.ToString());
         }
     }
 }
