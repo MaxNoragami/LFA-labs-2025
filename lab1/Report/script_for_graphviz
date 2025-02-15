@@ -1,0 +1,19 @@
+digraph finite_automaton {
+    rankdir=LR;
+    size="8,5";
+
+    node [shape = point]; start;
+    node [shape = doublecircle]; q_F;
+    node [shape = circle];
+
+    start -> S;
+    S -> P [label="a"];
+    S -> Q [label="b"];
+    P -> P [label="b"];
+    P -> P [label="c"];
+    P -> Q [label="d"];
+    P -> q_F [label="e"];
+    Q -> Q [label="e"];
+    Q -> Q [label="f"];
+    Q -> q_F [label="a"];
+}
