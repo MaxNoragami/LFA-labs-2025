@@ -8,16 +8,16 @@
 ****
 ##### Formal Languages Overview
 A **formal language** is a structured system of communication defined by precise mathematical rules. It comprises three core components [[3]](#ref3):
-- **Alphabet ($\Sigma$):** A finite, non-empty set of symbols (e.g., binary alphabet $\Sigma=$ {$0, 1$})
+- **Alphabet ($\Sigma$):** A finite, non-empty set of symbols (e.g., binary alphabet $\Sigma=$ {0, 1})
 - **Vocabulary:** A set of valid words formed from the *alphabet*
 - **Grammar:** A set of rules that dictate how valid *strings* are constructed from the *alphabet*
 ##### Alphabet and Strings
 - **Alphabet ($\Sigma$)** - a finite set of symbols
-- **String/Word** - a finite sequence of symbols from an *alphabet*. For example, *0011* is a string over $\Sigma=$ {$0, 1$}
+- **String/Word** - a finite sequence of symbols from an *alphabet*. For example, *0011* is a string over $\Sigma=$ {0, 1}
 - **Empty String ($\varepsilon$ OR $\lambda$)** - a *string* with zero symbols
 - **Length ($|w|$)** - the number of symbols in a *string* (e.g., $|0101| = 4$)
 - **$\Sigma^*$ (Kleene Star)** - the set of all possible *strings* over $\Sigma$, including $\varepsilon$
-- **$\Sigma^+$** = $\Sigma^*$/{$\varepsilon$}, the set of all possible *non-empty strings* over $\Sigma$ 
+- **$\Sigma^+$** = $\Sigma^*$/{ $\varepsilon$ }, the set of all possible *non-empty strings* over $\Sigma$ 
 ##### Operations on Strings
 - **Concatenation** - combining two strings $x$ and $y$ to form $xy$, *non-commutative*
 - **Power Notation** - repeating a string $n$ times (e.g., $a^3 = aaa$)  
@@ -52,14 +52,14 @@ A **grammar** $G$ is a 4-tuple $G=(V_N, V_T, P, S)$:
 ****
 1. Discover what a language is and what it needs to have in order to be considered a formal one.
 2. Provide the initial setup for the evolving project that you will work on during this semester. You can deal with each laboratory work as a separate task or project to demonstrate your understanding of the given themes, but you also can deal with labs as stages of making your own big solution, your own project. Do the following:
-		a. Create GitHub repository to deal with storing and updating your project;
-	    b. Choose a programming language. Pick one that will be easiest for dealing with your tasks, you need to learn how to solve the problem itself, not everything around the problem (like setting up the project, launching it correctly and etc.);
-	    c. Store reports separately in a way to make verification of your work simpler (duh)
-3. According to your variant number, get the grammar definition and do the following:
-	    a. Implement a type/class for your grammar;
-	    b. Add one function that would generate 5 valid strings from the language expressed by your given grammar;
-	    c. Implement some functionality that would convert and object of type Grammar to one of type Finite Automaton;
-	    d. For the Finite Automaton, please add a method that checks if an input string can be obtained via the state transition from it;
+   	- Create GitHub repository to deal with storing and updating your project;
+   - Choose a programming language. Pick one that will be easiest for dealing with your tasks, you need to learn how to solve the problem itself, not everything around the problem (like setting up the project, launching it correctly and etc.);
+	- Store reports separately in a way to make verification of your work simpler;
+4. According to your variant number, get the grammar definition and do the following:
+   - Implement a type/class for your grammar;
+	- Add one function that would generate 5 valid strings from the language expressed by your given grammar;
+	- Implement some functionality that would convert an object of type Grammar to one of type Finite Automaton;
+  	- For the Finite Automaton, please add a method that checks if an input string can be obtained via the state transition from it;
 
 
 ## Implementation description
