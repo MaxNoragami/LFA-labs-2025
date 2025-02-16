@@ -29,29 +29,31 @@ namespace lab1
             
             Console.Write("\nFA Check: ({0}) ", string.Join("", currentStates));
 
-            foreach(var letter in inputString)
+            for(int letter = 0; letter < inputString.Length; letter++)
             {
                 var nextStates = new HashSet<string>();
                 var nextPath = new HashSet<char>();
 
                 foreach(var state in currentStates)
                 {
-                    if(Delta.Keys.Contains((state, letter)))
+                    if(Delta.Keys.Contains((state, inputString[letter])))
                     {
-                        HashSet<string> possibleStates = [.. Delta[(state, letter)]];
+                        HashSet<string> possibleStates = [.. Delta[(state, inputString[letter])]];
                         nextStates = nextStates.Concat(possibleStates).ToHashSet();
-                        nextPath.Add(letter);
+                        nextPath.Add(inputString[letter]);
                     }
                 }
             
                 currentStates = nextStates;
-
+                
                 if(currentStates.Count == 0)
                 {
                     Console.Write("-----> Invalid", string.Join("", nextPath));
                     return false;
                 }
-
+                
+                if(letter != inputString.Length - 1) currentStates.Remove(QF);
+                
                 Console.Write("--{0}--> ({1}) ", string.Join("", nextPath), string.Join("", currentStates));
             }
             return currentStates.Contains(QF);
