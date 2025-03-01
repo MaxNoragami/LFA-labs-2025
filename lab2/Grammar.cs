@@ -10,12 +10,11 @@ namespace lab2
 {
     public class Grammar
     {
-        public HashSet<string> VN {get; private set;} // Using HashSet because unordered collection of unique elements
+        public HashSet<HashSet<string>> VN {get; private set;} // Using HashSet because unordered collection of unique elements
         public HashSet<char> VT {get; private set;}
-        public Dictionary<string, List<string>> P {get; private set;}
+        public Dictionary<HashSet<string>, (char, HashSet<string>)> P {get; private set;}
         public string S {get; private set;}
-
-        public Grammar(HashSet<string> vN, HashSet<char> vT, Dictionary<string, List<string>> p, string s)
+        public Grammar(HashSet<HashSet<string>> vN, HashSet<char> vT, Dictionary<HashSet<string>, (char, HashSet<string>)> p, string s)
         {
             VN = vN;
             VT = vT;

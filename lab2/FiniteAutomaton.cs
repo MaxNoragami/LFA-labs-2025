@@ -8,13 +8,13 @@ namespace lab2
 {
     public class FiniteAutomaton
     {
-        public HashSet<string> Q { get; set; } // Here goes V_n
+        public HashSet<HashSet<string>> Q { get; set; } // Here goes V_n
         public HashSet<char> Sigma { get; set; } // Here goes V_t
-        public Dictionary<(string, char), HashSet<string>> Delta { get; set; } // Here goes P , we have a Dictionary with a Tuple and a hashset        
+        public Dictionary<(HashSet<string>, char), HashSet<string>> Delta { get; set; } // Here goes P , we have a Dictionary with a Tuple and a hashset        
         public string Q0 {get; set; } // Here goes S
-        public HashSet<string> QF { get; set; } // Here goes q_f
+        public HashSet<HashSet<string>> QF { get; set; } // Here goes q_f
 
-        public FiniteAutomaton(HashSet<string> q, HashSet<char> sigma, Dictionary<(string, char), HashSet<string>> delta, string q0, HashSet<string> qF)
+        public FiniteAutomaton(HashSet<HashSet<string>> q, HashSet<char> sigma, Dictionary<(HashSet<string>, char), HashSet<string>> delta, string q0, HashSet<HashSet<string>> qF)
         {
             Q = q;
             Sigma = sigma;
