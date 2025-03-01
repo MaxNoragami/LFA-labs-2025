@@ -89,6 +89,11 @@ namespace lab2
             return new Grammar(vN, vT, p, s);
         }
 
+        public bool IsDFA()
+        {
+            return !Delta.Values.Any(v => v.Count > 1);
+        }
+
         public override string ToString()
         {
             string qData = "Q = {" + string.Join(", ", Q) + "}\n";
