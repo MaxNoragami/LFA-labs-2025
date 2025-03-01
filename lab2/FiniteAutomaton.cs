@@ -54,7 +54,7 @@ namespace lab2
                 
                 Console.Write("--{0}--> ({1}) ", string.Join("", nextPath), string.Join("", currentStates));
             }
-            HashSet<string>? final = (HashSet<string>) currentStates.Intersect(QF).ToHashSet();
+            HashSet<string>? final =  currentStates.Intersect(QF).ToHashSet();
             return (final == null)? false : final.Count > 0;
         }
 
@@ -71,8 +71,18 @@ namespace lab2
                 p[transition.Key.Item1] = new List<string>();
                 foreach(var state in transition.Value)
                 {
-                    string leftTerminal = QF.Contains(state)? string.Empty: state;
-                    p[transition.Key.Item1].Add(string.Concat(transition.Key.Item2, leftTerminal));
+                    string rightNonTerminal = QF.Contains(state)? string.Empty: state;
+                    p[transition.Key.Item1].Add(string.Concat(transition.Key.Item2, rightNonTerminal));
+                }
+            }
+            
+            HashSet<string> absentNonTerminalsOnLHS = vN.Except(p.Keys.ToHashSet()).ToHashSet();
+            
+            if(absentNonTerminalsOnLHS.Count > 0)
+            {
+                foreach(var nonTerminal in absentNonTerminalsOnLHS)
+                {
+                    p[nonTerminal] = new List<string>() {"ε"};
                 }
             }
             

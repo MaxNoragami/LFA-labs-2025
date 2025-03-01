@@ -22,6 +22,7 @@
             
             Console.WriteLine(finiteAutomaton.ToString());
 
+            // Creating a grammar instance from the FA
             Grammar grammar = finiteAutomaton.ToRegularGrammar();
             Console.WriteLine(grammar.ToString());
     
