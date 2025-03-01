@@ -5,16 +5,21 @@
         static void Main()
         {
             // Variant 1
-            HashSet<string> q = new HashSet<string>() {"q0", "q1", "q2", "q3"};
-            HashSet<char> sigma = new HashSet<char>() {'a', 'b', 'c'};
-            Dictionary<(string, char), HashSet<string>> delta = new Dictionary<(string, char), HashSet<string>> {
-                { ("q0", 'a'), new HashSet<string>() {"q0", "q1"} },
-                { ("q1", 'c'), new HashSet<string>() {"q1"} },
-                { ("q1", 'b'), new HashSet<string>() {"q2"} },
-                { ("q2", 'b'), new HashSet<string>() {"q3"} },
-                { ("q3", 'a'), new HashSet<string>() {"q1"} },
+            HashSet<HashSet<string>> q = new HashSet<HashSet<string>>() {
+                new HashSet<string>(){"q0"}, 
+                new HashSet<string>(){"q1"}, 
+                new HashSet<string>(){"q2"}, 
+                new HashSet<string>(){"q3"}
             };
-            HashSet<string> qF = new HashSet<string>() {"q2"};
+            HashSet<char> sigma = new HashSet<char>() {'a', 'b', 'c'};
+            Dictionary<(HashSet<string>, char), HashSet<string>> delta = new Dictionary<(HashSet<string>, char), HashSet<string>> {
+                { (new HashSet<string>(){"q0"}, 'a'), new HashSet<string>() {"q0", "q1"} },
+                { (new HashSet<string>(){"q1"}, 'c'), new HashSet<string>() {"q1"} },
+                { (new HashSet<string>(){"q1"}, 'b'), new HashSet<string>() {"q2"} },
+                { (new HashSet<string>(){"q2"}, 'b'), new HashSet<string>() {"q3"} },
+                { (new HashSet<string>(){"q3"}, 'a'), new HashSet<string>() {"q1"} },
+            };
+            HashSet<HashSet<string>> qF = new HashSet<HashSet<string>>() {new HashSet<string>(){"q2"}};
             string q0 = "q0";
 
             // Initializing the FA

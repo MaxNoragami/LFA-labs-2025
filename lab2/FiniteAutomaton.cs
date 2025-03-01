@@ -23,67 +23,64 @@ namespace lab2
             QF = qF;
         }
 
-        public bool StringBelongToLanguage(String inputString)
+        public bool StringBelongToLanguage(string inputString)
         {
-            var currentStates = new HashSet<string>(){Q0};
+            // Wrap Q0 into a singleton set so that currentStates is a HashSet of states.
+            var currentStates = new HashSet<HashSet<string>> { new HashSet<string> { Q0 } };
+            Console.Write("\nFA Check: ({0}) ", string.Join(" | ", currentStates.Select(s => "{" + string.Join(",", s) + "}")));
             
-            Console.Write("\nFA Check: ({0}) ", string.Join("", currentStates));
-
-            for(int letter = 0; letter < inputString.Length; letter++)
+            for (int i = 0; i < inputString.Length; i++)
             {
-                var nextStates = new HashSet<string>();
-                var nextPath = new HashSet<char>();
-
-                foreach(var state in currentStates)
+                var nextStates = new HashSet<HashSet<string>>();
+                char letter = inputString[i];
+                foreach (var state in currentStates)
                 {
-                    if(Delta.Keys.Contains((state, inputString[letter])))
+                    if (Delta.TryGetValue((state, letter), out var nextState))
                     {
-                        HashSet<string> possibleStates = [.. Delta[(state, inputString[letter])]];
-                        nextStates = nextStates.Concat(possibleStates).ToHashSet();
-                        nextPath.Add(inputString[letter]);
+                        nextStates.Add(nextState);
                     }
                 }
-            
-                currentStates = nextStates;
-                
-                if(currentStates.Count == 0)
+                if (nextStates.Count == 0)
                 {
-                    Console.Write("-----> Invalid", string.Join("", nextPath));
+                    Console.Write("-----> Invalid for letter {0}", letter);
                     return false;
                 }
-                
-                Console.Write("--{0}--> ({1}) ", string.Join("", nextPath), string.Join("", currentStates));
+                Console.Write("--{0}--> ({1}) ", letter, 
+                    string.Join(" | ", nextStates.Select(s => "{" + string.Join(",", s) + "}")));
+                currentStates = nextStates;
             }
-            HashSet<string>? final =  currentStates.Intersect(QF).ToHashSet();
-            return (final == null)? false : final.Count > 0;
+            // Accept if any reached state is among QF.
+            return currentStates.Any(state => QF.Contains(state));
         }
 
         public Grammar ToRegularGrammar()
         {
-            HashSet<string> vN = [.. Q];
-            HashSet<char> vT = [.. Sigma];
+            // Nonterminals for the grammar are taken from the FA's states.
+            var vN = Q;  // (HashSet<HashSet<string>>)
+            var vT = Sigma;
             string s = Q0;
-            Dictionary<string, List<string>> p = new Dictionary<string, List<string>>();
-            //  Dictionary<(string, char), HashSet<string>> delta
             
-            foreach(var transition in Delta)
+            // Build production rules.
+            // Production type: A -> aB (or A -> a if next state is final)
+            var p = new Dictionary<HashSet<string>, (char, HashSet<string>)>(new HashSetComparer());
+            foreach (var transition in Delta)
             {
-                p[transition.Key.Item1] = new List<string>();
-                foreach(var state in transition.Value)
-                {
-                    string rightNonTerminal = QF.Contains(state)? string.Empty: state;
-                    p[transition.Key.Item1].Add(string.Concat(transition.Key.Item2, rightNonTerminal));
-                }
+                var lhs = transition.Key.Item1; // left-hand side is a set of strings
+                char terminal = transition.Key.Item2;
+                var rhs = transition.Value;       // right-hand side state
+
+                // If the destination state is final, treat as terminal production.
+                if (QF.Contains(rhs))
+                    p[lhs] = (terminal, new HashSet<string>());
+                else
+                    p[lhs] = (terminal, rhs);
             }
             
-            HashSet<string> absentNonTerminalsOnLHS = vN.Except(p.Keys.ToHashSet()).ToHashSet();
-            
-            if(absentNonTerminalsOnLHS.Count > 0)
+            // For any nonterminal with no production, add an ε-production.
+            foreach (var nonTerminal in vN)
             {
-                foreach(var nonTerminal in absentNonTerminalsOnLHS)
-                {
-                    p[nonTerminal] = new List<string>() {"ε"};
-                }
+                if (!p.ContainsKey(nonTerminal))
+                    p[nonTerminal] = ('ε', new HashSet<string>());
             }
             
             return new Grammar(vN, vT, p, s);
@@ -91,23 +88,39 @@ namespace lab2
 
         public bool IsDFA()
         {
-            return !Delta.Values.Any(v => v.Count > 1);
+            // DFA if every transition leads to exactly one state.
+            return Delta.Values.All(v => v.Count == 1);
         }
 
         public override string ToString()
         {
-            string qData = "Q = {" + string.Join(", ", Q) + "}\n";
-            string sigmaData = "Σ ={" + string.Join(", ", Sigma) + "}\n";
+            string qData = "Q = {" + string.Join(", ", Q.Select(s => "{" + string.Join(", ", s) + "}")) + "}\n";
+            string sigmaData = "Σ = {" + string.Join(", ", Sigma) + "}\n";
             StringBuilder deltaData = new StringBuilder();
-            foreach(var pair in Delta)
+            foreach (var pair in Delta)
             {
-                deltaData.Append($"\tδ(" + pair.Key + ") = {" + string.Join(", ", pair.Value) + "}\n");
+                deltaData.Append($"\tδ({{" + string.Join(",", pair.Key.Item1) + "}, " + pair.Key.Item2 +") = {" 
+                    + string.Join(",", pair.Value) + "}\n");
             }
+            string q0Data = "q₀ = " + Q0 + "\n";
+            string qFData = "q_F = {" + string.Join(", ", QF.Select(s => "{" + string.Join(", ", s) + "}")) + "}\n";
+            return qData + sigmaData + deltaData.ToString() + q0Data + qFData;
+        }
+    }
 
-            string q0Data = "q_0 = {" + Q0 + "}\n";
-            string qFData = "q_F = {" + string.Join(", ", QF) + "}\n";
-
-            return string.Format("{0}{1}{2}{3}{4}", qData, sigmaData, deltaData.ToString(), q0Data, qFData);
+    // Helper comparer for HashSet<string> keys.
+    public class HashSetComparer : IEqualityComparer<HashSet<string>>
+    {
+        public bool Equals(HashSet<string> x, HashSet<string> y)
+        {
+            return x.SetEquals(y);
+        }
+        public int GetHashCode(HashSet<string> obj)
+        {
+            int hash = 19;
+            foreach (var s in obj.OrderBy(x => x))
+                hash = hash * 31 + s.GetHashCode();
+            return hash;
         }
     }
 }
