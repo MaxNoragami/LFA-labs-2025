@@ -21,6 +21,10 @@
             FiniteAutomaton finiteAutomaton = new FiniteAutomaton(q, sigma, delta, q0, qF);
             
             Console.WriteLine(finiteAutomaton.ToString());
+
+            Grammar grammar = finiteAutomaton.ToRegularGrammar();
+            Console.WriteLine(grammar.ToString());
+    
         }
     }
 }

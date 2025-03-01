@@ -58,6 +58,27 @@ namespace lab2
             return (final == null)? false : final.Count > 0;
         }
 
+        public Grammar ToRegularGrammar()
+        {
+            HashSet<string> vN = [.. Q];
+            HashSet<char> vT = [.. Sigma];
+            string s = Q0;
+            Dictionary<string, List<string>> p = new Dictionary<string, List<string>>();
+            //  Dictionary<(string, char), HashSet<string>> delta
+            
+            foreach(var transition in Delta)
+            {
+                p[transition.Key.Item1] = new List<string>();
+                foreach(var state in transition.Value)
+                {
+                    string leftTerminal = QF.Contains(state)? string.Empty: state;
+                    p[transition.Key.Item1].Add(string.Concat(transition.Key.Item2, leftTerminal));
+                }
+            }
+            
+            return new Grammar(vN, vT, p, s);
+        }
+
         public override string ToString()
         {
             string qData = "Q = {" + string.Join(", ", Q) + "}\n";
