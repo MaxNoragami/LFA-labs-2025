@@ -12,9 +12,9 @@ namespace lab2
         public HashSet<char> Sigma { get; set; } // Here goes V_t
         public Dictionary<(string, char), HashSet<string>> Delta { get; set; } // Here goes P , we have a Dictionary with a Tuple and a hashset        
         public string Q0 {get; set; } // Here goes S
-        public string QF { get; set; } // Here goes q_f
+        public HashSet<string> QF { get; set; } // Here goes q_f
 
-        public FiniteAutomaton(HashSet<string> q, HashSet<char> sigma, Dictionary<(string, char), HashSet<string>> delta, string q0, string qF)
+        public FiniteAutomaton(HashSet<string> q, HashSet<char> sigma, Dictionary<(string, char), HashSet<string>> delta, string q0, HashSet<string> qF)
         {
             Q = q;
             Sigma = sigma;
@@ -52,11 +52,10 @@ namespace lab2
                     return false;
                 }
                 
-                if(letter != inputString.Length - 1) currentStates.Remove(QF);
-                
                 Console.Write("--{0}--> ({1}) ", string.Join("", nextPath), string.Join("", currentStates));
             }
-            return currentStates.Contains(QF);
+            HashSet<string>? final = (HashSet<string>) currentStates.Intersect(QF).ToHashSet();
+            return (final == null)? false : final.Count > 0;
         }
 
         public override string ToString()
@@ -70,7 +69,7 @@ namespace lab2
             }
 
             string q0Data = "q_0 = {" + Q0 + "}\n";
-            string qFData = "q_F = {" + QF + "}\n";
+            string qFData = "q_F = {" + string.Join(", ", QF) + "}\n";
 
             return string.Format("{0}{1}{2}{3}{4}", qData, sigmaData, deltaData.ToString(), q0Data, qFData);
         }

@@ -56,8 +56,10 @@ namespace lab2
 
         public FiniteAutomaton ToFiniteAutomaton()
         {
-            string qF = "q_F";
-            HashSet<string> q = [.. VN, qF];
+            HashSet<string> qF = new HashSet<string>() {"q_F"};
+            HashSet<string> q = new HashSet<string>();
+            q.UnionWith(VN);
+            q.UnionWith(qF);
             HashSet<char> sigma = [.. VT]; 
             string q0 = S;
             Dictionary<(string, char), HashSet<string>> delta = new Dictionary<(string, char), HashSet<string>>();
@@ -85,7 +87,10 @@ namespace lab2
 
                     if(!delta.ContainsKey(key)) delta[key] = new HashSet<string>();
 
-                    delta[key].Add((nonTerminal == string.Empty)? qF:nonTerminal);
+                    if(nonTerminal != string.Empty)
+                        delta[key].Add(nonTerminal);
+                    else
+                        delta[key].UnionWith(qF);
                 }
             }
 
