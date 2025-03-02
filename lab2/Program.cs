@@ -32,6 +32,9 @@
             Console.WriteLine(grammar.ToString());
 
             Console.WriteLine(finiteAutomaton.IsDFA());
+
+            FiniteAutomaton dfa = finiteAutomaton.ToDFA();
+            Console.WriteLine(dfa.ToString());
     
         }
     }
