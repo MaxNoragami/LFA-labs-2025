@@ -11,6 +11,9 @@ namespace lab2
         public HashSet<char> VT { get; private set; }
         public Dictionary<HashSet<string>, HashSet<(char, HashSet<string>)>> P { get; private set; }
         public string S { get; private set; }
+        public List<(string, HashSet<string>)> LHSandRHS { get; private set; }
+        
+        
 
         public Grammar(HashSet<HashSet<string>> vN, HashSet<char> vT, 
                        Dictionary<HashSet<string>, HashSet<(char, HashSet<string>)>> p, string s)
@@ -19,6 +22,16 @@ namespace lab2
             VT = vT;
             P = p;
             S = s;
+            LHSandRHS = new List<(string, HashSet<string>)>();
+        }
+
+        public Grammar(HashSet<HashSet<string>> vN, HashSet<char> vT, string s, List<(string, HashSet<string>)> lhsANDrhs)
+        {
+            VN = vN;
+            VT = vT;
+            P = new Dictionary<HashSet<string>, HashSet<(char, HashSet<string>)>>();
+            S = s;
+            LHSandRHS = lhsANDrhs;
         }
 
         public string GenerateString()
@@ -93,6 +106,173 @@ namespace lab2
             }
             
             return new FiniteAutomaton(q, sigma, delta, q0, qF);
+        }
+
+        public int CheckType()
+        {
+            if (LHSandRHS.Count == 0)
+                return 3; // Default return value if no rules exist
+
+            List<int> potentialTypes = new List<int>();
+
+            // Grammar-wide tracking of linearity for the single-character LHS branch.
+            bool seenRightLinear = false;
+            bool seenLeftLinear = false;
+
+            foreach (var rule in LHSandRHS)
+            {
+                string lhs = rule.Item1;
+                HashSet<string> rhsOptions = rule.Item2;
+
+                Console.WriteLine("Checking rule: LHS = {0}, RHS = {1}", lhs, string.Join(" | ", rhsOptions));
+
+                // Check if LHS contains at least one non-terminal.
+                bool lhsHasNonTerminal = false;
+                foreach (var nonTerminalSet in VN)
+                {
+                    foreach (var nonTerminal in nonTerminalSet)
+                    {
+                        if (lhs.Contains(nonTerminal))
+                        {
+                            lhsHasNonTerminal = true;
+                            break;
+                        }
+                    }
+                    if (lhsHasNonTerminal)
+                        break;
+                }
+
+                // For rules with LHS longer than one symbol.
+                if (lhs.Length > 1 && lhsHasNonTerminal)
+                {
+                    // If an epsilon alternative exists and either the LHS is not S or S appears on a RHS, force type 0.
+                    if (rhsOptions.Contains("_") && (lhs != S || RhsContainsStart()))
+                    {
+                        potentialTypes.Add(0);
+                        continue;
+                    }
+
+                    bool isType1 = true;
+                    foreach (var rhs in rhsOptions)
+                    {
+                        // For Type 1, each RHS should be at least as long as the LHS.
+                        if (rhs.Length < lhs.Length)
+                        {
+                            isType1 = false;
+                            break;
+                        }
+                    }
+                    potentialTypes.Add(isType1 ? 1 : 0);
+                }
+                // For rules with a single-character LHS.
+                else if (lhs.Length == 1 && lhsHasNonTerminal)
+                {
+                    // If the rule consists solely of ε and lhs is not S, mark it as type 2.
+                    if (rhsOptions.Count == 1 && rhsOptions.Contains("_") && lhs != S)
+                    {
+                        potentialTypes.Add(2);
+                        continue;
+                    }
+                    // If the rule has multiple alternatives including ε (for a non-start nonterminal), force type 0.
+                    if (rhsOptions.Count > 1 && rhsOptions.Contains("_") && lhs != S)
+                    {
+                        potentialTypes.Add(0);
+                        continue;
+                    }
+
+                    bool canBeType3 = true;
+                    foreach (var rhs in rhsOptions)
+                    {
+                        // For the start symbol S, allow an ε-production only if S never appears on any RHS.
+                        if (rhs == "_" && lhs == S && !RhsContainsStart())
+                            continue;
+
+                        int nonTerminalCount = 0;
+                        List<(string nonTerminal, int position)> nonTerminalsInRhs = new List<(string, int)>();
+
+                        foreach (var nonTerminalSet in VN)
+                        {
+                            foreach (var nonTerminal in nonTerminalSet)
+                            {
+                                if (rhs.Contains(nonTerminal))
+                                {
+                                    nonTerminalCount++;
+                                    nonTerminalsInRhs.Add((nonTerminal, rhs.IndexOf(nonTerminal)));
+                                }
+                            }
+                        }
+
+                        // If there are no non-terminals, the production must be exactly one terminal to be regular.
+                        if (nonTerminalCount == 0)
+                        {
+                            if (rhs.Length > 1)
+                            {
+                                canBeType3 = false;
+                            }
+                            continue;
+                        }
+
+                        // More than one non-terminal forces a Type 2 classification.
+                        if (nonTerminalCount > 1)
+                        {
+                            canBeType3 = false;
+                            continue;
+                        }
+
+                        // With exactly one non-terminal, check its position.
+                        var nonTerminalInfo = nonTerminalsInRhs[0];
+                        string foundNonTerminal = nonTerminalInfo.nonTerminal;
+                        int nonTerminalPosition = nonTerminalInfo.position;
+
+                        // Determine if the production is right-linear or left-linear.
+                        bool isRightLinearRule = nonTerminalPosition == rhs.Length - foundNonTerminal.Length;
+                        bool isLeftLinearRule = nonTerminalPosition == 0;
+
+                        if (!isRightLinearRule && !isLeftLinearRule)
+                        {
+                            canBeType3 = false;
+                            continue;
+                        }
+
+                        if (isRightLinearRule)
+                            seenRightLinear = true;
+                        if (isLeftLinearRule)
+                            seenLeftLinear = true;
+                        if (seenRightLinear && seenLeftLinear)
+                        {
+                            canBeType3 = false;
+                            break;
+                        }
+                    }
+                    potentialTypes.Add(canBeType3 ? 3 : 2);
+                }
+                else
+                {
+                    // Invalid grammar.
+                    potentialTypes.Add(-1);
+                }
+            }
+
+            if (potentialTypes.Count == 0)
+                return -1;
+
+            // Return the most restrictive (minimum) type among all rules.
+            return potentialTypes.Min();
+
+        }
+
+        // Helper method to check if S appears on the right side of any rule
+        private bool RhsContainsStart()
+        {
+            foreach (var rule in LHSandRHS)
+            {
+                foreach (var rhs in rule.Item2)
+                {
+                    if (rhs.Contains(S))
+                        return true;
+                }
+            }
+            return false;
         }
 
         public override string ToString()
