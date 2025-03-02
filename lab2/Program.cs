@@ -11,15 +11,16 @@
                 new HashSet<string>(){"q2"}, 
                 new HashSet<string>(){"q3"}
             };
-            HashSet<char> sigma = new HashSet<char>() {'a', 'b', 'c'};
+            HashSet<char> sigma = new HashSet<char>() {'0', '1'};
             Dictionary<(HashSet<string>, char), HashSet<string>> delta = new Dictionary<(HashSet<string>, char), HashSet<string>> {
-                { (q.ElementAt(0), 'a'), new HashSet<string>() {"q0", "q1"} },
-                { (q.ElementAt(1), 'c'), new HashSet<string>() {"q1"} },
-                { (q.ElementAt(1), 'b'), new HashSet<string>() {"q2"} },
-                { (q.ElementAt(2), 'b'), new HashSet<string>() {"q3"} },
-                { (q.ElementAt(3), 'a'), new HashSet<string>() {"q1"} },
+                { (q.ElementAt(0), '0'), new HashSet<string>() {"q0", "q2"} },
+                { (q.ElementAt(0), '1'), new HashSet<string>() {"q0", "q1"} },
+                { (q.ElementAt(1), '1'), new HashSet<string>() {"q3"} },
+                { (q.ElementAt(2), '0'), new HashSet<string>() {"q3"} },
+                { (q.ElementAt(3), '0'), new HashSet<string>() {"q3"} },
+                { (q.ElementAt(3), '1'), new HashSet<string>() {"q3"} },
             };
-            HashSet<HashSet<string>> qF = new HashSet<HashSet<string>>() {new HashSet<string>(){"q2"}};
+            HashSet<HashSet<string>> qF = new HashSet<HashSet<string>>() {new HashSet<string>(){"q3"}};
             string q0 = "q0";
 
             // Initializing the FA

@@ -1,20 +1,19 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.CompilerServices;
-using System.Security.Cryptography;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace lab2
 {
     public class Grammar
     {
-        public HashSet<HashSet<string>> VN {get; private set;} // Using HashSet because unordered collection of unique elements
-        public HashSet<char> VT {get; private set;}
-        public Dictionary<HashSet<string>, (char, HashSet<string>)> P {get; private set;}
-        public string S {get; private set;}
-        public Grammar(HashSet<HashSet<string>> vN, HashSet<char> vT, Dictionary<HashSet<string>, (char, HashSet<string>)> p, string s)
+        public HashSet<HashSet<string>> VN { get; private set; }
+        public HashSet<char> VT { get; private set; }
+        public Dictionary<HashSet<string>, HashSet<(char, HashSet<string>)>> P { get; private set; }
+        public string S { get; private set; }
+
+        public Grammar(HashSet<HashSet<string>> vN, HashSet<char> vT, 
+                       Dictionary<HashSet<string>, HashSet<(char, HashSet<string>)>> p, string s)
         {
             VN = vN;
             VT = vT;
@@ -27,23 +26,31 @@ namespace lab2
             StringBuilder current = new StringBuilder(S);
             Console.Write("\nWord Build: {0}", current);
             bool replaced = true;
+            
             while (replaced)
             {
                 replaced = false;
                 for (int i = 0; i < current.Length; i++)
                 {
                     string symbol = current[i].ToString();
-                    // Create a candidate nonterminal set for comparison.
+                    // Create a candidate nonterminal set for comparison
                     var candidate = new HashSet<string> { symbol };
+                    
                     if (VN.Any(nt => nt.SetEquals(candidate)))
                     {
                         replaced = true;
-                        // Retrieve the matching nonterminal key from P.
+                        // Retrieve the matching nonterminal key from P
                         var key = VN.First(nt => nt.SetEquals(candidate));
-                        var productionRule = P[key];
-                        // Build the replacement string: the terminal followed by (if any) the nonterminal part.
-                        string replacement = productionRule.Item1.ToString() + 
-                            (productionRule.Item2.Count > 0 ? productionRule.Item2.First() : "");
+                        
+                        // Select a random production rule from the possible options
+                        var productionOptions = P[key].ToList();
+                        var random = new Random();
+                        var selectedProduction = productionOptions[random.Next(productionOptions.Count)];
+                        
+                        // Build the replacement string: terminal + nonterminal (if any)
+                        string replacement = selectedProduction.Item1.ToString() + 
+                            (selectedProduction.Item2.Count > 0 ? selectedProduction.Item2.First() : "");
+                            
                         current.Remove(i, 1);
                         current.Insert(i, replacement);
                         Console.Write(" ---> {0}", current);
@@ -56,28 +63,35 @@ namespace lab2
 
         public FiniteAutomaton ToFiniteAutomaton()
         {
-            // Create final state (q_F) as a singleton set.
+            // Create final state (q_F) as a singleton set
             var qF = new HashSet<HashSet<string>>() { new HashSet<string> { "q_F" } };
-            // Union VN and q_F to build the state set.
+            // Union VN and q_F to build the state set
             var q = new HashSet<HashSet<string>>(VN, new HashSetComparer());
             q.UnionWith(qF);
+            
             HashSet<char> sigma = new HashSet<char>(VT);
             string q0 = S;
             var delta = new Dictionary<(HashSet<string>, char), HashSet<string>>(new TupleComparer());
             
-            foreach (var rule in P)
+            foreach (var rulePair in P)
             {
-                char terminal = rule.Value.Item1;
-                HashSet<string> nextNonTerminal = rule.Value.Item2;
-                var key = (rule.Key, terminal);
-                if (!delta.ContainsKey(key))
-                    delta[key] = new HashSet<string>();
-                // If the production has a nonterminal, use it; otherwise, transition to final state.
-                if (nextNonTerminal.Count > 0)
-                    delta[key] = nextNonTerminal;
-                else
-                    delta[key] = qF.First();
+                HashSet<string> nonTerminal = rulePair.Key;
+                
+                foreach (var production in rulePair.Value)
+                {
+                    char terminal = production.Item1;
+                    HashSet<string> nextNonTerminal = production.Item2;
+                    
+                    var key = (nonTerminal, terminal);
+                    
+                    // If the production has a nonterminal, use it; otherwise, transition to final state
+                    if (nextNonTerminal.Count > 0)
+                        delta[key] = nextNonTerminal;
+                    else
+                        delta[key] = qF.First();
+                }
             }
+            
             return new FiniteAutomaton(q, sigma, delta, q0, qF);
         }
 
@@ -85,15 +99,28 @@ namespace lab2
         {
             string vNData = "V_N = {" + string.Join(", ", VN.Select(nt => "{" + string.Join(", ", nt) + "}")) + "}\n";
             string vTData = "V_T = {" + string.Join(", ", VT) + "}\n"; 
+            
             StringBuilder pData = new StringBuilder("P = {\n");
+            
+            // Group productions by left-hand side
             foreach (var pair in P)
             {
                 string lhs = "{" + string.Join(",", pair.Key) + "}";
-                string rhs = pair.Value.Item1.ToString() + 
-                    (pair.Value.Item2.Count > 0 ? " {" + string.Join(", ", pair.Value.Item2) + "}" : " ε");
-                pData.Append("\t" + lhs + " ---> " + rhs + "\n");
+                
+                // Combine all productions for this non-terminal
+                List<string> rhsStrings = new List<string>();
+                foreach (var production in pair.Value)
+                {
+                    string rhs = production.Item1.ToString() + 
+                        (production.Item2.Count > 0 ? " {" + string.Join(", ", production.Item2) + "}" : " ε");
+                    rhsStrings.Add(rhs);
+                }
+                
+                // Join with pipe symbol
+                pData.Append("\t" + lhs + " ---> " + string.Join(" | ", rhsStrings) + "\n");
             }
             pData.Append("}\n");
+            
             string sData = "S = " + S + "\n";
             return vNData + vTData + pData.ToString() + sData;
         }

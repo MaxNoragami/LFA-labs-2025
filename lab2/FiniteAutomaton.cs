@@ -55,32 +55,40 @@ namespace lab2
 
         public Grammar ToRegularGrammar()
         {
-            // Nonterminals for the grammar are taken from the FA's states.
-            var vN = Q;  // (HashSet<HashSet<string>>)
+            // Nonterminals for the grammar are taken from the FA's states
+            var vN = Q;
             var vT = Sigma;
             string s = Q0;
             
-            // Build production rules.
-            // Production type: A -> aB (or A -> a if next state is final)
-            var p = new Dictionary<HashSet<string>, (char, HashSet<string>)>(new HashSetComparer());
+            // Build production rules
+            var p = new Dictionary<HashSet<string>, HashSet<(char, HashSet<string>)>>(new HashSetComparer());
+            
             foreach (var transition in Delta)
             {
                 var lhs = transition.Key.Item1; // left-hand side is a set of strings
                 char terminal = transition.Key.Item2;
-                var rhs = transition.Value;       // right-hand side state
-
-                // If the destination state is final, treat as terminal production.
-                if (QF.Contains(rhs))
-                    p[lhs] = (terminal, new HashSet<string>());
-                else
-                    p[lhs] = (terminal, rhs);
+                var rhs = transition.Value;     // right-hand side state
+                
+                // Create an entry for this non-terminal if it doesn't exist
+                if (!p.ContainsKey(lhs))
+                    p[lhs] = new HashSet<(char, HashSet<string>)>();
+                
+                // Add the production rule
+                p[lhs].Add((terminal, rhs));
+                
+                // Add an epsilon-production if the target state is a final state
+                // Use Any() with a custom equality comparison to properly check against QF
+                if (QF.Any(finalState => finalState.SetEquals(rhs)))
+                {
+                    p[lhs].Add((terminal, new HashSet<string>()));
+                }
             }
             
-            // For any nonterminal with no production, add an ε-production.
+            // For any nonterminal with no production, add an ε-production
             foreach (var nonTerminal in vN)
             {
                 if (!p.ContainsKey(nonTerminal))
-                    p[nonTerminal] = ('ε', new HashSet<string>());
+                    p[nonTerminal] = new HashSet<(char, HashSet<string>)> { ('ε', new HashSet<string>()) };
             }
             
             return new Grammar(vN, vT, p, s);
@@ -93,82 +101,82 @@ namespace lab2
         }
 
         public FiniteAutomaton ToDFA()
-{
-    // Create a custom comparer for hash sets to ensure proper equality checking
-    var setComparer = new HashSetComparer();
-    
-    // Initialize the DFA components
-    var q = new HashSet<HashSet<string>>(setComparer);
-    var sigma = new HashSet<char>(Sigma);
-    var delta = new Dictionary<(HashSet<string>, char), HashSet<string>>(new TupleComparer());
-    
-    // Initial state of the DFA is {q0}
-    var initialState = new HashSet<string> { Q0 };
-    q.Add(initialState);
-    
-    // Keep track of states we still need to process
-    var statesToProcess = new Queue<HashSet<string>>();
-    statesToProcess.Enqueue(initialState);
-    
-    // Final states of the DFA
-    var qF = new HashSet<HashSet<string>>(setComparer);
-    
-    // Process each state in the queue
-    while (statesToProcess.Count > 0)
-    {
-        var currentState = statesToProcess.Dequeue();
-        
-        // Determine if this state contains any final states from the NFA
-        foreach (var finalState in QF)
         {
-            if (currentState.Overlaps(finalState))
-            {
-                qF.Add(currentState);
-                break;
-            }
-        }
-        
-        // For each symbol in the alphabet, compute the next state
-        foreach (var symbol in sigma)
-        {
-            var nextState = new HashSet<string>();
+            // Create a custom comparer for hash sets to ensure proper equality checking
+            var setComparer = new HashSetComparer();
             
-            // For each state in the current composite state
-            foreach (var state in currentState)
+            // Initialize the DFA components
+            var q = new HashSet<HashSet<string>>(setComparer);
+            var sigma = new HashSet<char>(Sigma);
+            var delta = new Dictionary<(HashSet<string>, char), HashSet<string>>(new TupleComparer());
+            
+            // Initial state of the DFA is {q0}
+            var initialState = new HashSet<string> { Q0 };
+            q.Add(initialState);
+            
+            // Keep track of states we still need to process
+            var statesToProcess = new Queue<HashSet<string>>();
+            statesToProcess.Enqueue(initialState);
+            
+            // Final states of the DFA
+            var qF = new HashSet<HashSet<string>>(setComparer);
+            
+            // Process each state in the queue
+            while (statesToProcess.Count > 0)
             {
-                // Try to find transitions for this individual state
-                foreach (var transition in Delta)
+                var currentState = statesToProcess.Dequeue();
+                
+                // Determine if this state contains any final states from the NFA
+                foreach (var finalState in QF)
                 {
-                    if (transition.Key.Item2 == symbol && 
-                        transition.Key.Item1.Contains(state))
+                    if (currentState.Overlaps(finalState))
                     {
-                        // Add destination states to our next composite state
-                        foreach (var destState in transition.Value)
+                        qF.Add(currentState);
+                        break;
+                    }
+                }
+                
+                // For each symbol in the alphabet, compute the next state
+                foreach (var symbol in sigma)
+                {
+                    var nextState = new HashSet<string>();
+                    
+                    // For each state in the current composite state
+                    foreach (var state in currentState)
+                    {
+                        // Try to find transitions for this individual state
+                        foreach (var transition in Delta)
                         {
-                            nextState.Add(destState);
+                            if (transition.Key.Item2 == symbol && 
+                                transition.Key.Item1.Contains(state))
+                            {
+                                // Add destination states to our next composite state
+                                foreach (var destState in transition.Value)
+                                {
+                                    nextState.Add(destState);
+                                }
+                            }
+                        }
+                    }
+                    
+                    // If we found a valid next state
+                    if (nextState.Count > 0)
+                    {
+                        // Add the transition to the DFA
+                        delta[(currentState, symbol)] = nextState;
+                        
+                        // If this is a new state, add it to the queue
+                        if (!q.Contains(nextState))
+                        {
+                            q.Add(nextState);
+                            statesToProcess.Enqueue(nextState);
                         }
                     }
                 }
             }
             
-            // If we found a valid next state
-            if (nextState.Count > 0)
-            {
-                // Add the transition to the DFA
-                delta[(currentState, symbol)] = nextState;
-                
-                // If this is a new state, add it to the queue
-                if (!q.Contains(nextState))
-                {
-                    q.Add(nextState);
-                    statesToProcess.Enqueue(nextState);
-                }
-            }
+            return new FiniteAutomaton(q, sigma, delta, Q0, qF);
         }
-    }
-    
-    return new FiniteAutomaton(q, sigma, delta, Q0, qF);
-}
 
         public override string ToString()
         {
