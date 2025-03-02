@@ -119,8 +119,23 @@ namespace lab2
             }
         
             Grammar createdGrammar = new Grammar(nonTerminals, terminals, start, rules);
+            int type = createdGrammar.CheckType();
+            if(type == 3)
+            {
+                createdGrammar.PopulateProductionRules();
+                Console.WriteLine(createdGrammar.ToString());
+                FiniteAutomaton finiteAutomaton = createdGrammar.ToFiniteAutomaton();
+                Console.WriteLine(finiteAutomaton.ToString());
+                // if(!finiteAutomaton.IsDFA())
+                // {
+                //     FiniteAutomaton dfaFiniteAutomaton = finiteAutomaton.ToDFA();
+                //     Console.WriteLine(dfaFiniteAutomaton.ToString());
+                //     Grammar dfaGrammar = dfaFiniteAutomaton.ToRegularGrammar();
+                //     Console.WriteLine(dfaGrammar.ToString());
+                // }
+            }
 
-            return createdGrammar.CheckType();
+            return type;
         }
     }
     

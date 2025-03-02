@@ -261,6 +261,65 @@ namespace lab2
 
         }
 
+        public void PopulateProductionRules()
+{
+    // Clear any existing production rules.
+    P.Clear();
+
+    // Process each production rule from LHSandRHS.
+    foreach (var rule in LHSandRHS)
+    {
+        // rule.Item1 is the LHS as a string.
+        // rule.Item2 is the set of alternatives (each alternative is a string).
+        string lhsString = rule.Item1;
+
+        // Find the matching nonterminal in VN (each nonterminal is a HashSet<string>).
+        // It is assumed that VN contains sets with a single string.
+        var key = VN.FirstOrDefault(nt => nt.Contains(lhsString));
+        if (key == null)
+        {
+            // If the nonterminal is not already present, add it.
+            key = new HashSet<string> { lhsString };
+            VN.Add(key);
+        }
+
+        // Ensure the key exists in the production rules dictionary.
+        if (!P.ContainsKey(key))
+        {
+            P[key] = new HashSet<(char, HashSet<string>)>();
+        }
+
+        // Process each alternative production.
+        foreach (var alternative in rule.Item2)
+        {
+            // Check if the alternative represents epsilon.
+            if (alternative == "_")
+            {
+                // Represent an epsilon production by using '_' (or any agreed-upon symbol)
+                // and an empty nonterminal set.
+                P[key].Add(('_', new HashSet<string>()));
+            }
+            else
+            {
+                // Otherwise, assume the alternative is of the form: terminal [nonterminal]
+                // where the first character is the terminal.
+                char terminal = alternative[0];
+                var nextNonTerminal = new HashSet<string>();
+
+                // If there is more than one character, the rest is the nonterminal.
+                if (alternative.Length > 1)
+                {
+                    string nonTerminalSymbol = alternative.Substring(1);
+                    nextNonTerminal.Add(nonTerminalSymbol);
+                }
+
+                P[key].Add((terminal, nextNonTerminal));
+            }
+        }
+    }
+}
+
+
         // Helper method to check if S appears on the right side of any rule
         private bool RhsContainsStart()
         {
