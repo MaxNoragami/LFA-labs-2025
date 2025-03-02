@@ -93,71 +93,82 @@ namespace lab2
         }
 
         public FiniteAutomaton ToDFA()
+{
+    // Create a custom comparer for hash sets to ensure proper equality checking
+    var setComparer = new HashSetComparer();
+    
+    // Initialize the DFA components
+    var q = new HashSet<HashSet<string>>(setComparer);
+    var sigma = new HashSet<char>(Sigma);
+    var delta = new Dictionary<(HashSet<string>, char), HashSet<string>>(new TupleComparer());
+    
+    // Initial state of the DFA is {q0}
+    var initialState = new HashSet<string> { Q0 };
+    q.Add(initialState);
+    
+    // Keep track of states we still need to process
+    var statesToProcess = new Queue<HashSet<string>>();
+    statesToProcess.Enqueue(initialState);
+    
+    // Final states of the DFA
+    var qF = new HashSet<HashSet<string>>(setComparer);
+    
+    // Process each state in the queue
+    while (statesToProcess.Count > 0)
+    {
+        var currentState = statesToProcess.Dequeue();
+        
+        // Determine if this state contains any final states from the NFA
+        foreach (var finalState in QF)
         {
-            // States to be added
-            HashSet<HashSet<string>> q = new HashSet<HashSet<string>>();
-            // Transition functions
-            HashSet<char> sigma = [.. Sigma];
-            // Transitions to be added
-            Dictionary<(HashSet<string>, char), HashSet<string>> delta = new Dictionary<(HashSet<string>, char), HashSet<string>>();  
-            // Start state as the NFA form
-            string q0 = Q0;
-            // Final states to be identified
-            HashSet<HashSet<string>> qF = [.. QF];
-            // Adding the initial state transitions from the NFA Delta to the DFA one by default
-            foreach(var transition in Delta)
+            if (currentState.Overlaps(finalState))
             {
-                var initialState = new HashSet<string>(){q0};
-                // Adding the initial state by default
-                q.Add(initialState);
-                if(transition.Key.Item1 == initialState)
-                {
-                    delta[transition.Key] = transition.Value;
-                    // We add the resulted states of the transition to the states of the DFA
-                    q.Add(transition.Value);
-                }
+                qF.Add(currentState);
+                break;
             }
-
-            // Taking each state of 'q' through each function 'sigma' to see if we get new states, 
-            // for which we will also repeat the process
-            var skippedFirst = false;
-            foreach(var state in q.ToList())
+        }
+        
+        // For each symbol in the alphabet, compute the next state
+        foreach (var symbol in sigma)
+        {
+            var nextState = new HashSet<string>();
+            
+            // For each state in the current composite state
+            foreach (var state in currentState)
             {
-                // We skip dealing with the initial state
-                if(!skippedFirst)
+                // Try to find transitions for this individual state
+                foreach (var transition in Delta)
                 {
-                    skippedFirst = true;
-                    continue;
-                }
-
-                foreach(var function in sigma)
-                {
-                    // We check the transition result for each substate of the states from 'q'
-                    // using the functions from 'sigma' for an equivalent in 'Delta' 
-                    // then we take those equivalents for each states and 
-                    // do the reunion in order to obtain a new state for DFA
-
-                    HashSet<string> temporaryState = new HashSet<string>();
-                    foreach(var subState in state)
+                    if (transition.Key.Item2 == symbol && 
+                        transition.Key.Item1.Contains(state))
                     {
-                        HashSet<string> subStateSetFrom = new HashSet<string>(){subState};
-                        if(!Delta.ContainsKey((subStateSetFrom, function))) continue;
-                        temporaryState.UnionWith(Delta[(subStateSetFrom, function)]);
+                        // Add destination states to our next composite state
+                        foreach (var destState in transition.Value)
+                        {
+                            nextState.Add(destState);
+                        }
                     }
-
-                    // We add the temp states to the 'q' of the DFA 
-                    // and log the transitions to obtain the 'delta' of the DFA
-                    // and add the transition results to the final states set if they contain the final state
-                    if(temporaryState == null) continue;
-                    delta[(state, function)] = temporaryState;
-                    q.Add(temporaryState);
-                    if(temporaryState.Any(state => qF.Any(finalStates => finalStates.Contains(state)))) qF.Add(temporaryState);
                 }
             }
             
-            // The new FA of Deterministic type
-            return new FiniteAutomaton(q, sigma, delta, q0, qF);
+            // If we found a valid next state
+            if (nextState.Count > 0)
+            {
+                // Add the transition to the DFA
+                delta[(currentState, symbol)] = nextState;
+                
+                // If this is a new state, add it to the queue
+                if (!q.Contains(nextState))
+                {
+                    q.Add(nextState);
+                    statesToProcess.Enqueue(nextState);
+                }
+            }
         }
+    }
+    
+    return new FiniteAutomaton(q, sigma, delta, Q0, qF);
+}
 
         public override string ToString()
         {
