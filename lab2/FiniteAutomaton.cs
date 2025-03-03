@@ -179,95 +179,95 @@ namespace lab2
             return new FiniteAutomaton(q, sigma, delta, Q0, qF);
         }
 
-public void GenerateGraph()
-{
-    // Define the output folder and file names
-    string folderPath = "Graphs";
-    if (!Directory.Exists(folderPath))
-    {
-        Directory.CreateDirectory(folderPath);
-    }
-    
-    // Create a unique suffix using the current timestamp.
-    string uniqueSuffix = DateTime.Now.ToString("yyyyMMdd_HHmmssfff");
-
-    // Use the unique suffix in the file names.
-    string dotFilePath = Path.Combine(folderPath, $"FiniteAutomaton_{uniqueSuffix}.dot");
-    string outputImagePath = Path.Combine(folderPath, $"FiniteAutomaton_{uniqueSuffix}.png");
-
-    // Build the DOT representation
-    StringBuilder dot = new StringBuilder();
-    dot.AppendLine("digraph FA {");
-    dot.AppendLine("\trankdir=LR;");
-    dot.AppendLine("\tsize=\"8,5\";");
-    dot.AppendLine("\tnode [shape = circle];");
-
-    // Define an invisible initial node with no label.
-    dot.AppendLine("\t\"init\" [shape=point, label=\"\"];");
-
-    // Create nodes for each state in Q.
-    foreach (var state in Q)
-    {
-        // Create a unique node id by joining state names with an underscore.
-        string nodeId = string.Join("_", state);
-        // For display, show the state with curly braces (e.g. {q0} or {q1,q2})
-        string label = "{" + string.Join(",", state) + "}";
-        if (QF.Any(final => final.SetEquals(state)))
+        public void GenerateGraph()
         {
-            dot.AppendLine($"\t\"{nodeId}\" [label=\"{label}\", shape=doublecircle];");
+            // Define the output folder and file names
+            string folderPath = "Graphs";
+            if (!Directory.Exists(folderPath))
+            {
+                Directory.CreateDirectory(folderPath);
+            }
+            
+            // Create a unique suffix using the current timestamp.
+            string uniqueSuffix = DateTime.Now.ToString("yyyyMMdd_HHmmssfff");
+
+            // Use the unique suffix in the file names.
+            string dotFilePath = Path.Combine(folderPath, $"FiniteAutomaton_{uniqueSuffix}.dot");
+            string outputImagePath = Path.Combine(folderPath, $"FiniteAutomaton_{uniqueSuffix}.png");
+
+            // Build the DOT representation
+            StringBuilder dot = new StringBuilder();
+            dot.AppendLine("digraph FA {");
+            dot.AppendLine("\trankdir=LR;");
+            dot.AppendLine("\tsize=\"8,5\";");
+            dot.AppendLine("\tnode [shape = circle];");
+
+            // Define an invisible initial node with no label.
+            dot.AppendLine("\t\"init\" [shape=point, label=\"\"];");
+
+            // Create nodes for each state in Q.
+            foreach (var state in Q)
+            {
+                // Create a unique node id by joining state names with an underscore.
+                string nodeId = string.Join("_", state);
+                // For display, show the state with curly braces (e.g. {q0} or {q1,q2})
+                string label = "{" + string.Join(",", state) + "}";
+                if (QF.Any(final => final.SetEquals(state)))
+                {
+                    dot.AppendLine($"\t\"{nodeId}\" [label=\"{label}\", shape=doublecircle];");
+                }
+                else
+                {
+                    dot.AppendLine($"\t\"{nodeId}\" [label=\"{label}\"];");
+                }
+            }
+
+            // Determine the initial state node id (assuming Q0 is a string and corresponds to {Q0} in Q)
+            string initialNodeId = string.Join("_", new HashSet<string> { Q0 });
+
+            // Connect the invisible node to the initial state
+            dot.AppendLine($"\t\"init\" -> \"{initialNodeId}\";");
+
+            // Force the invisible node and the initial state to be on the same rank
+            dot.AppendLine("\t{ rank = same; \"init\"; \"" + initialNodeId + "\"; }");
+
+            // Add edges for each transition in Delta.
+            foreach (var transition in Delta)
+            {
+                var fromState = transition.Key.Item1;
+                char symbol = transition.Key.Item2;
+                var toState = transition.Value;
+
+                string fromId = string.Join("_", fromState);
+                string toId = string.Join("_", toState);
+
+                dot.AppendLine($"\t\"{fromId}\" -> \"{toId}\" [label=\"{symbol}\"];");
+            }
+            dot.AppendLine("}");
+
+            // Write the DOT file
+            File.WriteAllText(dotFilePath, dot.ToString());
+            Console.WriteLine("DOT file generated at: " + dotFilePath);
+
+            // Call GraphViz to generate a PNG from the DOT file.
+            Process process = new Process();
+            process.StartInfo.FileName = "dot"; // Ensure 'dot' is available in your PATH
+            process.StartInfo.Arguments = $"-Tpng \"{dotFilePath}\" -o \"{outputImagePath}\"";
+            process.StartInfo.CreateNoWindow = true;
+            process.StartInfo.UseShellExecute = false;
+
+            try
+            {
+                process.Start();
+                process.WaitForExit();
+                Console.WriteLine($"Graph generated successfully as \"{outputImagePath}\".");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error generating PNG with GraphViz: " + ex.Message);
+                Console.WriteLine("Please ensure GraphViz is installed and the 'dot' command is available in your PATH.");
+            }
         }
-        else
-        {
-            dot.AppendLine($"\t\"{nodeId}\" [label=\"{label}\"];");
-        }
-    }
-
-    // Determine the initial state node id (assuming Q0 is a string and corresponds to {Q0} in Q)
-    string initialNodeId = string.Join("_", new HashSet<string> { Q0 });
-
-    // Connect the invisible node to the initial state
-    dot.AppendLine($"\t\"init\" -> \"{initialNodeId}\";");
-
-    // Force the invisible node and the initial state to be on the same rank
-    dot.AppendLine("\t{ rank = same; \"init\"; \"" + initialNodeId + "\"; }");
-
-    // Add edges for each transition in Delta.
-    foreach (var transition in Delta)
-    {
-        var fromState = transition.Key.Item1;
-        char symbol = transition.Key.Item2;
-        var toState = transition.Value;
-
-        string fromId = string.Join("_", fromState);
-        string toId = string.Join("_", toState);
-
-        dot.AppendLine($"\t\"{fromId}\" -> \"{toId}\" [label=\"{symbol}\"];");
-    }
-    dot.AppendLine("}");
-
-    // Write the DOT file
-    File.WriteAllText(dotFilePath, dot.ToString());
-    Console.WriteLine("DOT file generated at: " + dotFilePath);
-
-    // Call GraphViz to generate a PNG from the DOT file.
-    Process process = new Process();
-    process.StartInfo.FileName = "dot"; // Ensure 'dot' is available in your PATH
-    process.StartInfo.Arguments = $"-Tpng \"{dotFilePath}\" -o \"{outputImagePath}\"";
-    process.StartInfo.CreateNoWindow = true;
-    process.StartInfo.UseShellExecute = false;
-
-    try
-    {
-        process.Start();
-        process.WaitForExit();
-        Console.WriteLine($"Graph generated successfully as \"{outputImagePath}\".");
-    }
-    catch (Exception ex)
-    {
-        Console.WriteLine("Error generating PNG with GraphViz: " + ex.Message);
-        Console.WriteLine("Please ensure GraphViz is installed and the 'dot' command is available in your PATH.");
-    }
-}
 
 
         public override string ToString()

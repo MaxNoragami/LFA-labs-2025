@@ -46,7 +46,7 @@ namespace lab2
             Console.WriteLine(grammar.ToString());
 
             // Checking if the FA is deterministic
-            Console.WriteLine(finiteAutomaton.IsDFA());
+            Console.WriteLine("Is the FA deterministic? {0}\n", finiteAutomaton.IsDFA());
 
             // We convert the NFA to DFA
             FiniteAutomaton dfa = finiteAutomaton.ToDFA();
@@ -55,12 +55,11 @@ namespace lab2
             // Generating the Graph
             dfa.GenerateGraph();
             
+            
             // We create the grammar of the DFA that was created out of the NFA
             Grammar dfaGrammar = dfa.ToRegularGrammar();
             Console.WriteLine(dfaGrammar.ToString());
 
-
-            Console.WriteLine(dfa.IsDFA());
             
             // Task 1. Checking different grammar types, via input from keyboard
             CheckGrammars();
@@ -150,6 +149,7 @@ namespace lab2
             // then we construct a Finite Automaton that coresponds to it
             Grammar createdGrammar = new Grammar(nonTerminals, terminals, start, rules);
             int type = createdGrammar.CheckType();
+            Console.WriteLine("\nType: {0}", type);
             if(type == 3)
             {
                 createdGrammar.PopulateProductionRules();
