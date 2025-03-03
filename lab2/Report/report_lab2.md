@@ -222,19 +222,7 @@ public bool IsDFA()
     - `sigma` remains the same as the original alphabet
     - `delta` is the new transition function for the DFA
     - A custom `HashSetComparer` is used to ensure proper equality checking for HashSets
-- The initial state of the DFA is created as a singleton set containing just the NFA's initial state `Q0`.
-- The algorithm maintains a queue of states that need to be processed (`statesToProcess`), starting with the initial state.
-- For each state in the queue, the method:
-    1. Checks if it contains any of the NFA's final states, and if so, adds it to the DFA's final states (`qF`)
-    2. For each symbol in the alphabet, computes the next state by:
-        - Looking at each individual NFA state in the current composite state
-        - Finding all possible transitions from those states on the current symbol
-        - Combining the destination states into a new composite state
-- If a valid next state is found:
-    - The transition is added to the DFA's transition function (`delta`)
-    - If this is a new state that hasn't been seen before, it's added to both the set of DFA states (`q`) and the processing queue
-- The algorithm continues until all reachable states have been processed (queue is empty).
-- Finally, it returns a new `FiniteAutomaton` representing the DFA, constructed from the computed components.
+- The initial state of the DFA is created as a singleton set containing just the NFA's initial state `Q0`
 
 ```csharp
 public FiniteAutomaton ToDFA()
@@ -252,6 +240,19 @@ public FiniteAutomaton ToDFA()
 	var initialState = new HashSet<string> { Q0 };
 	q.Add(initialState);
 
+	...
+}
+```
+
+- The algorithm maintains a queue of states that need to be processed (`statesToProcess`), starting with the initial state.
+- For each state in the queue, the method:
+    1. Checks if it contains any of the NFA's final states, and if so, adds it to the DFA's final states (`qF`)
+
+```csharp
+public FiniteAutomaton ToDFA()
+{
+	...
+	
 	// Keep track of states we still need to process
 	var statesToProcess = new Queue<HashSet<string>>();
 	statesToProcess.Enqueue(initialState);
@@ -273,6 +274,24 @@ public FiniteAutomaton ToDFA()
 				break;
 			}
 		}
+	...
+}
+```
+
+2.  For each symbol in the alphabet, computes the next state by:
+	- Looking at each individual NFA state in the current composite state
+	- Finding all possible transitions from those states on the current symbol
+	- Combining the destination states into a new composite state
+- If a valid next state is found:
+- The transition is added to the DFA's transition function (`delta`)
+- If this is a new state that hasn't been seen before, it's added to both the set of DFA states (`q`) and the processing queue
+- The algorithm continues until all reachable states have been processed (queue is empty).
+- Finally, it returns a new `FiniteAutomaton` representing the DFA, constructed from the computed components.
+
+```csharp
+public FiniteAutomaton ToDFA()
+{
+	...
 
 		// For each symbol in the alphabet, compute the next state
 		foreach (var symbol in sigma)
@@ -319,11 +338,6 @@ public FiniteAutomaton ToDFA()
 
 - In continuity, we analyze the `GenerateGraph()` method from the `FiniteAutomaton` class, which is responsible for creating a graphical representation of the finite automaton and exporting it as an image.
 - The method first ensures that a `Graphs` directory exists for storing the output files. It generates a unique filename suffix based on the current timestamp to avoid overwriting previous files.
-- The core functionality involves constructing a DOT representation of the finite automaton, which is a textual format used by GraphViz to create visual graphs. The method initializes the DOT structure, setting the rank direction (`LR` for left-to-right) and defining the nodes' appearance.
-- Each state in the automaton is added as a node in the DOT file. Final states are represented using a double-circle shape, while other states are displayed as standard circles. An invisible initial node is introduced to properly indicate the starting state.
-- The method then iterates through the transition function (`Delta`) to define directed edges between states, with labels representing input symbols.
-- Once the DOT representation is complete, it is written to a file. The method then attempts to execute the `dot` command from GraphViz to generate a PNG image from the DOT file.
-- If the command executes successfully, the generated image path is displayed in the console. Otherwise, an error message is printed, suggesting that the user check their GraphViz installation and PATH configuration.
 
 ```csharp
 public void GenerateGraph()
@@ -341,6 +355,39 @@ public void GenerateGraph()
 	// Use the unique suffix in the file names.
 	string dotFilePath = Path.Combine(folderPath, $"FiniteAutomaton_{uniqueSuffix}.dot");
 	string outputImagePath = Path.Combine(folderPath, $"FiniteAutomaton_{uniqueSuffix}.png");
+	...
+}
+```
+
+- The core functionality involves constructing a DOT representation of the finite automaton, which is a textual format used by GraphViz to create visual graphs. The method initializes the DOT structure, setting the rank direction (`LR` for left-to-right) and defining the nodes' appearance.
+
+```csharp
+public void GenerateGraph()
+{
+	// Define the output folder and file names
+	string folderPath = "Graphs";
+	if (!Directory.Exists(folderPath))
+	{
+		Directory.CreateDirectory(folderPath);
+	}
+
+	// Create a unique suffix using the current timestamp.
+	string uniqueSuffix = DateTime.Now.ToString("yyyyMMdd_HHmmssfff");
+
+	// Use the unique suffix in the file names.
+	string dotFilePath = Path.Combine(folderPath, $"FiniteAutomaton_{uniqueSuffix}.dot");
+	string outputImagePath = Path.Combine(folderPath, $"FiniteAutomaton_{uniqueSuffix}.png");
+
+	...
+}
+```
+
+- Each state in the automaton is added as a node in the DOT file. Final states are represented using a double-circle shape, while other states are displayed as standard circles. An invisible initial node is introduced to properly indicate the starting state.
+
+```csharp
+public void GenerateGraph()
+{
+	...
 
 	// Build the DOT representation
 	StringBuilder dot = new StringBuilder();
@@ -379,6 +426,17 @@ public void GenerateGraph()
 
 	// Force the invisible node and the initial state to be on the same rank
 	dot.AppendLine("\t{ rank = same; \"init\"; \"" + initialNodeId + "\"; }");
+	
+	...
+}
+```
+
+- The method then iterates through the transition function (`Delta`) to define directed edges between states, with labels representing input symbols.
+
+```csharp
+public void GenerateGraph()
+{
+	...
 
 	// Add edges for each transition in Delta.
 	foreach (var transition in Delta)
@@ -393,6 +451,17 @@ public void GenerateGraph()
 		dot.AppendLine($"\t\"{fromId}\" -> \"{toId}\" [label=\"{symbol}\"];");
 	}
 	dot.AppendLine("}");
+
+	...
+}
+```
+
+- Once the DOT representation is complete, it is written to a file. The method then attempts to execute the `dot` command from GraphViz to generate a PNG image from the DOT file.
+
+```csharp
+public void GenerateGraph()
+{
+	...
 
 	// Write the DOT file
 	File.WriteAllText(dotFilePath, dot.ToString());
@@ -412,6 +481,17 @@ public void GenerateGraph()
 		Console.WriteLine($"Graph generated successfully as \"{outputImagePath}\".");
 	}
 
+	...
+}
+```
+
+- If the command executes successfully, the generated image path is displayed in the console. Otherwise, an error message is printed, suggesting that the user check their GraphViz installation and PATH configuration.
+
+```csharp
+public void GenerateGraph()
+{
+	...
+	
 	catch (Exception ex)
 	{
 		Console.WriteLine("Error generating PNG with GraphViz: " + ex.Message);
@@ -422,12 +502,6 @@ public void GenerateGraph()
 
 - Last but not least, we analyze the `CheckType()` method from the `Grammar` class, which is responsible for determining the Chomsky hierarchy classification of a given grammar based on its production rules.
 - The method first checks whether any production rules exist. If not, it defaults to returning `3`, assuming a type-3 (regular) grammar as a fallback.
-- A list of potential grammar types is initialized to keep track of the classification of different rules. Additionally, two Boolean flags, `seenRightLinear` and `seenLeftLinear`, are used to detect mixed linearity, which would disqualify the grammar from being type-3.
-- The method iterates through each production rule, first identifying whether the left-hand side (LHS) contains at least one non-terminal. This ensures that only valid grammar rules are considered.
-- If the LHS contains more than one symbol, the rule is evaluated for type-1 (context-sensitive) classification. The method ensures that every right-hand side (RHS) production is at least as long as the LHS, otherwise, the rule is marked as type-0 (unrestricted).
-- If the LHS consists of a single non-terminal, the rule is evaluated for type-3 (regular) classification. The method checks for epsilon (`ε`) productions, ensuring they do not invalidate the regular structure. It also examines the position of non-terminals in the RHS to determine whether the grammar is left-linear or right-linear.
-- If both left-linear and right-linear rules are detected, the grammar is downgraded to type-2 (context-free), since regular grammars must be exclusively one or the other.
-- After evaluating all rules, the method returns the most restrictive (minimum) type detected among them. If no valid classification is found, it returns `-1`, indicating an invalid grammar.
 
 ```csharp
 public int CheckType()
@@ -435,12 +509,35 @@ public int CheckType()
 	if (LHSandRHS.Count == 0)
 		return 3; // Default return value if no rules exist
 
+	...
+}
+```
+
+- A list of potential grammar types is initialized to keep track of the classification of different rules. Additionally, two Boolean flags, `seenRightLinear` and `seenLeftLinear`, are used to detect mixed linearity, which would disqualify the grammar from being type-3.
+
+```csharp 
+public int CheckType()
+{
+	...
+	
 	List<int> potentialTypes = new List<int>();
 
 	// Grammar-wide tracking of linearity for the single-character LHS branch.
 	bool seenRightLinear = false;
 	bool seenLeftLinear = false;
+	
+	...
+}
+```
 
+- The method iterates through each production rule, first identifying whether the left-hand side (LHS) contains at least one non-terminal. This ensures that only valid grammar rules are considered.
+- If the LHS contains more than one symbol, the rule is evaluated for type-1 (context-sensitive) classification. The method ensures that every right-hand side (RHS) production is at least as long as the LHS, otherwise, the rule is marked as type-0 (unrestricted).
+
+```csharp
+public int CheckType()
+{
+	...
+	
 	foreach (var rule in LHSandRHS)
 	{
 		string lhs = rule.Item1;
@@ -486,7 +583,21 @@ public int CheckType()
 			}
 			potentialTypes.Add(isType1 ? 1 : 0);
 		}
+		
+	...
+	
+	}
+	
+	...
+}
+```
 
+- If the LHS consists of a single non-terminal, the rule is evaluated for type-3 (regular) classification. The method checks for epsilon (`ε`) productions, ensuring they do not invalidate the regular structure. It also examines the position of non-terminals in the RHS to determine whether the grammar is left-linear or right-linear.
+
+```csharp
+public int CheckType()
+{
+	...
 		// For rules with a single-character LHS.
 		else if (lhs.Length == 1 && lhsHasNonTerminal)
 		{
@@ -535,43 +646,62 @@ public int CheckType()
 					}
 					continue;
 				}
+	...
+}
+```
 
-				// More than one non-terminal forces a Type 2 classification.
-				if (nonTerminalCount > 1)
-				{
-					canBeType3 = false;
-					continue;
-				}
+- If both left-linear and right-linear rules are detected, the grammar is downgraded to type-2 (context-free), since regular grammars must be exclusively one or the other.
 
-				// With exactly one non-terminal, check its position.
-				var nonTerminalInfo = nonTerminalsInRhs[0];
-				string foundNonTerminal = nonTerminalInfo.nonTerminal;
-				int nonTerminalPosition = nonTerminalInfo.position;
-
-				// Determine if the production is right-linear or left-linear.
-				bool isRightLinearRule = nonTerminalPosition == rhs.Length - foundNonTerminal.Length;
-				bool isLeftLinearRule = nonTerminalPosition == 0;
-
-				if (!isRightLinearRule && !isLeftLinearRule)
-				{
-					canBeType3 = false;
-					continue;
-				}
-
-				if (isRightLinearRule)
-					seenRightLinear = true;
-
-				if (isLeftLinearRule)
-					seenLeftLinear = true;
-
-				if (seenRightLinear && seenLeftLinear)
-				{
-					canBeType3 = false;
-					break;
-				}
+```csharp
+public int CheckType()
+{
+	...
+			// More than one non-terminal forces a Type 2 classification.
+			if (nonTerminalCount > 1)
+			{
+				canBeType3 = false;
+				continue;
 			}
-			potentialTypes.Add(canBeType3 ? 3 : 2);
+
+			// With exactly one non-terminal, check its position.
+			var nonTerminalInfo = nonTerminalsInRhs[0];
+			string foundNonTerminal = nonTerminalInfo.nonTerminal;
+			int nonTerminalPosition = nonTerminalInfo.position;
+
+			// Determine if the production is right-linear or left-linear.
+			bool isRightLinearRule = nonTerminalPosition == rhs.Length - foundNonTerminal.Length;
+			bool isLeftLinearRule = nonTerminalPosition == 0;
+
+			if (!isRightLinearRule && !isLeftLinearRule)
+			{
+				canBeType3 = false;
+				continue;
+			}
+
+			if (isRightLinearRule)
+				seenRightLinear = true;
+
+			if (isLeftLinearRule)
+				seenLeftLinear = true;
+
+			if (seenRightLinear && seenLeftLinear)
+			{
+				canBeType3 = false;
+				break;
+			}
 		}
+		potentialTypes.Add(canBeType3 ? 3 : 2);
+	}
+	...
+}
+```
+
+- After evaluating all rules, the method returns the most restrictive (minimum) type detected among them. If no valid classification is found, it returns `-1`, indicating an invalid grammar.
+
+```csharp
+public int CheckType()
+{
+	...
 		else
 		{
 			// Invalid grammar.
