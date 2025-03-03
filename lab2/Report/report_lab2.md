@@ -201,7 +201,12 @@ public Grammar ToRegularGrammar()
 }
 ```
 
-- Check if FA is a DFA
+- The implementation consists of a single line that leverages LINQ's All() method to test a necessary condition for DFAs.
+It examines the Delta transition function, which contains mappings from (state, input symbol) pairs to destination states.
+For each transition in Delta.Values, it checks if the target set contains exactly one state (v.Count == 1).
+This is the defining characteristic of a DFA: for any given state and input symbol, there must be exactly one possible next state.
+- If any transition leads to zero states (undefined transition) or multiple states (nondeterministic behavior), the automaton would fail this test and be classified as an NFA (Nondeterministic Finite Automaton).
+The method returns a boolean value: true if all transitions point to a single state (confirming it's a DFA), or false otherwise (indicating it's an NFA).
 
 ```csharp
 public bool IsDFA()
@@ -211,7 +216,25 @@ public bool IsDFA()
 }
 ```
 
-- Convert a NFA to DFA
+ The `ToDFA()` method implements the subset construction algorithm, which converts a Nondeterministic Finite Automaton (NFA) into an equivalent Deterministic Finite Automaton (DFA).
+- First, the method initializes the components of the new DFA:
+    - `q` is a HashSet of HashSets, where each inner HashSet represents a composite state in the DFA (potentially containing multiple NFA states)
+    - `sigma` remains the same as the original alphabet
+    - `delta` is the new transition function for the DFA
+    - A custom `HashSetComparer` is used to ensure proper equality checking for HashSets
+- The initial state of the DFA is created as a singleton set containing just the NFA's initial state `Q0`.
+- The algorithm maintains a queue of states that need to be processed (`statesToProcess`), starting with the initial state.
+- For each state in the queue, the method:
+    1. Checks if it contains any of the NFA's final states, and if so, adds it to the DFA's final states (`qF`)
+    2. For each symbol in the alphabet, computes the next state by:
+        - Looking at each individual NFA state in the current composite state
+        - Finding all possible transitions from those states on the current symbol
+        - Combining the destination states into a new composite state
+- If a valid next state is found:
+    - The transition is added to the DFA's transition function (`delta`)
+    - If this is a new state that hasn't been seen before, it's added to both the set of DFA states (`q`) and the processing queue
+- The algorithm continues until all reachable states have been processed (queue is empty).
+- Finally, it returns a new `FiniteAutomaton` representing the DFA, constructed from the computed components.
 
 ```csharp
 public FiniteAutomaton ToDFA()
@@ -813,10 +836,23 @@ q_F = {{q_F}}
 - A visualization of my `Deterministic FiniteAutomaton` graph, that was generated using GraphvViz tool, the script of which was generated based on the obtained DFA.
 
 <p align="center">
-  <img width="600" src="../Graphs/FiniteAutomaton_20250303_140749281finite_automaton_graph_variant_one.png" alt="Finite Automaton Graph"/>
+  <img width="600" src="../Graphs/FiniteAutomaton_20250303_140749281.png" alt="Finite Automaton Graph"/>
 </p>
 
-In conclusion, while executing this laboratory work, with the topic of *Intro to formal languages, Regular grammars, Finite Automata*, I have managed to understand better the whole concept of alphabets, languages, their types and differences, and what makes one formal, grammars and FA. Moreover, the main objectives of this laboratory have been fulfilled, as I have provided a setup for my evolving project, a GitHub repo, that I will work on during this semester, and I have also chosen a programming language, C#, in order to execute the tasks. According to my variant, number one, I have implemented a class for my `Grammar` and one for the `FiniteAutomaton`, together with two methods in the `Grammar` class, one `GenerateString()` that is used to generate valid strings according to the production rules, and the other method is `ToFiniteAutomaton()` that returns a `FiniteAutomaton` instance based on the existent `Grammar` definition. In the other class, `FiniteAutomaton`, a method named `StringBelongToLanguage()` has also been implemented, having the function to check if an input string can be obtained via the state transition from the FA instance. On top of that, I got a better grasp of what a Regular Grammar is and how it differs from the other types, together with the process of converting it to a Finite Automaton, and how a FA works. Last but not least, I have used an external tool [[5]](#ref5), a visual editor for Graphviz, in order to create a visual representation of my Finite Automaton graph, to better visualize the transitions among the states.
+To sum up, in this laboratory work, all the established objectives were successfully accomplished through the implementation of various methods and algorithms related to finite automata and regular grammars.
+Task 1, understanding what an automaton is and its applications, was achieved through a comprehensive implementation of the `FiniteAutomaton` class that handles both deterministic and non-deterministic automata.
+For Task 2, the classification of grammars based on Chomsky hierarchy was implemented through the `CheckType()` method in the `Grammar` class. This method meticulously analyzes production rules to determine whether a grammar belongs to Type 0 (unrestricted), Type 1 (context-sensitive), Type 2 (context-free), or Type 3 (regular).
+Task 3 was fulfilled through several key implementations:
+- The conversion from finite automaton to regular grammar was accomplished via the `ToRegularGrammar()` method, which systematically transforms states and transitions into production rules.
+- The determination of whether a FA is deterministic or non-deterministic was implemented through the `IsDFA()` method, which checks if each state-symbol pair leads to exactly one next state.
+- The conversion from NDFA to DFA was realized in the `ToDFA()` method, which uses the subset construction algorithm to create an equivalent deterministic automaton.
+- The graphical representation of finite automata was implemented in the `GenerateGraph()` method, which uses the *GraphViz* tool to generate visual diagrams of the automata.
+
+The entire laboratory work was built upon the foundation of the previous lab, requiring significant modifications due to the statically-typed nature of C#. This presented a considerable challenge, as most class properties needed to be redefined with more complex types to accommodate the requirements of both deterministic and non-deterministic automata. For example, the transition function had to be changed from `Dictionary<(string, char), HashSet<string>>` to `Dictionary<(HashSet<string>, char), HashSet<string>>` to handle composite states in the DFA conversion.
+
+These modifications demanded a deeper understanding of both the theoretical concepts and practical implementation details, particularly in handling the set operations required for the subset construction algorithm. Custom comparers like `HashSetComparer` and `TupleComparer` had to be implemented to ensure proper equality checking for composite states.
+
+Despite these challenges, all functionalities were successfully implemented and tested with various examples, demonstrating the conversions between different forms of automata and grammars, as well as the classification of grammars according to the Chomsky hierarchy. The visual representation capability enhances the understanding of the automata structure and transitions, providing a valuable tool for analysis and verification.
 
 ## References
 ****
@@ -832,5 +868,3 @@ https://else.fcim.utm.md/pluginfile.php/110457/mod_resource/content/0/Theme_1.pd
 
 <a id="ref4"></a>[4] Presentation on "Regular Language. Finite Automata" - TUM - 
 https://drive.google.com/file/d/1rBGyzDN5eWMXTNeUxLxmKsf7tyhHt9Jk/view
-
-<a id="ref5"></a>[5] Graphviz Visual Editor - magjac Interactive - https://magjac.com/graphviz-visual-editor/
