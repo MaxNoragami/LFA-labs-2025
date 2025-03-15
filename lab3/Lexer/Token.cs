@@ -1,4 +1,4 @@
-namespace lab3.Tokenizer
+namespace lab3.Lexer
 {
     public class Token
     {
