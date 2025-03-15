@@ -1,7 +1,4 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+using System.Text.RegularExpressions;
 
 namespace lab3.Lexer
 {
@@ -11,6 +8,9 @@ namespace lab3.Lexer
         private int _position;
         private int _line;
         private int _column;
+
+        // Regex Patterns
+        private static readonly Regex NumberRegex = new Regex(@"(\d+\.\d+|\d+p|\d+)", RegexOptions.Compiled);
 
         public Tokenizer(string input)
         {
@@ -63,6 +63,10 @@ namespace lab3.Lexer
             if(current == '}') return Advance(TokenType.CLOSE_BLOCK, "}");
             if(current == '{') return Advance(TokenType.OPEN_BLOCK, "{");
             if(current == ';') return Advance(TokenType.EOF, ";");
+            if(current == '/') return Advance(TokenType.DIVIDE, "/");
+            if(current == '*') return Advance(TokenType.MULTIPLY, "*");
+            if(current == '+') return Advance(TokenType.PLUS, "+");
+            if(current == '-') return Advance(TokenType.MINUS, "-");
 
             if (current == '=')
             {
@@ -92,6 +96,11 @@ namespace lab3.Lexer
             {
                 string word = ReadWord();
                 return CreateWordToken(word);
+            }
+
+            if (char.IsDigit(current))
+            {
+                return MatchNumber();
             }
 
             return null;
@@ -172,6 +181,25 @@ namespace lab3.Lexer
             if (word.First() == '#') return new Token(TokenType.VAR_IDENTIFIER, word, _line, _column - word.Length);   
 
             throw new Exception(string.Format("Unexpected word '{0}', at line {1}, column {2}.", word, _line, _column - word.Length));
+        }
+
+        // Tokenizes the numbers
+        private Token MatchNumber()
+        {
+            Match match = NumberRegex.Match(_input, _position);
+            if (match.Success && match.Index == _position) // Ensure the match starts at the current position
+            {
+                string value = match.Value;
+                _position += value.Length; // Advance the position
+                _column += value.Length;   // Update the column
+
+                // Determine the token type based on the matched value
+                if (value.Last() == 'p') return new Token(TokenType.PXLS_VALUE, value, _line, _column - value.Length);
+                if (value.Contains(".")) return new Token(TokenType.DBL_VALUE, value, _line, _column - value.Length);
+                return new Token(TokenType.INT_VALUE, value, _line, _column - value.Length);
+            }
+
+            throw new Exception(string.Format("Unexpected num value '{0}', at line {1}, column {2}.", match, _line, _column - match.Length));
         }
     }
 }
