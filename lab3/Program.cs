@@ -6,25 +6,25 @@ namespace lab3
     {
         static void Main()
         {
-            string input = """
+            var testInputDir = Directory.EnumerateFiles("TestInputs");
+            
+            foreach(var testInputFile in testInputDir)
             {
-                BATCH #mybatch = "images/";
-                FOREACH IMG $img IN #mybatch {
-                    SET $img SEPIA;
-                    ROTATE $img LEFT;
-                    CROP $img (100, 200);
-                    INT $width = METADATA $img WIDTH;
+                if(testInputFile.Contains(".pixil"))
+                {
+                    string input = File.ReadAllText(testInputFile);
+                    Console.WriteLine("\n\n{0}",input);
+
+                    // Tokenization Process
+                    Tokenizer lexer = new Tokenizer(input);
+                    List<Token> tokens = lexer.Tokenize();
+
+                    Console.WriteLine("\nTokens, detailed view:");
+                    foreach (var token in tokens)
+                    {
+                        Console.WriteLine($"{token.Type}: '{token.Value}' at line {token.Line}, column {token.Column}");
+                    }
                 }
-            }
-            """;
-
-            Console.WriteLine(input);
-
-            Tokenizer lexer = new Tokenizer(input);
-            List<Token> tokens = lexer.Tokenize();
-            foreach (var token in tokens)
-            {
-                Console.WriteLine($"{token.Type}: '{token.Value}' at line {token.Line}, column {token.Column}");
             }
         }
     }

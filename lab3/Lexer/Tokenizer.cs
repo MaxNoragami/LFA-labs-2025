@@ -1,3 +1,4 @@
+using System.Text;
 using System.Text.RegularExpressions;
 
 namespace lab3.Lexer
@@ -29,14 +30,34 @@ namespace lab3.Lexer
                 char current = _input[_position];
 
                 // Skip whitespaces
-                if(char.IsWhiteSpace(current))
+                if (char.IsWhiteSpace(current))
                 {
+                    // Checks for line feed encounters
+                    if (current == '\n')
+                    {
+                        _line++;
+                        _column = 1;
+                    }
+                    else if (current == '\r')
+                    {
+                        // Handle '\r\n' Windows and carriage return old Mac
+                        if (_position + 1 < _input.Length && _input[_position + 1] == '\n')
+                        {
+                            _position++; // Skip the '\n' in '\r\n'
+                        }
+                        _line++;
+                        _column = 1;
+                    }
+                    else
+                    {
+                        // In case of spaces or other stuff
+                        _column++;
+                    }
                     _position++;
-                    _column++;
                     continue;
                 }
 
-                Token token = MatchToken();
+                Token? token = MatchToken();
                 if(token != null)
                 {
                     tokens.Add(token);
@@ -52,7 +73,7 @@ namespace lab3.Lexer
             return tokens;
         }
 
-        private Token MatchToken()
+        private Token? MatchToken()
         {
             char current = _input[_position];
 
@@ -62,7 +83,7 @@ namespace lab3.Lexer
             if(current == ',') return Advance(TokenType.COMMA, ",");
             if(current == '}') return Advance(TokenType.CLOSE_BLOCK, "}");
             if(current == '{') return Advance(TokenType.OPEN_BLOCK, "{");
-            if(current == ';') return Advance(TokenType.EOF, ";");
+            if(current == ';') return Advance(TokenType.EOL, ";");
             if(current == '/') return Advance(TokenType.DIVIDE, "/");
             if(current == '*') return Advance(TokenType.MULTIPLY, "*");
             if(current == '+') return Advance(TokenType.PLUS, "+");
@@ -91,18 +112,27 @@ namespace lab3.Lexer
                 if (Peek() == '=') return AdvanceTwo(TokenType.NOT_EQUAL, "!=");
                 return null;
             }
-
+            
+            // Tokenizing reserved words
             if (char.IsLetter(current) || current == '$' || current == '#')
             {
                 string word = ReadWord();
                 return CreateWordToken(word);
             }
 
+            // Tokenizing numerical values
             if (char.IsDigit(current))
             {
                 return MatchNumber();
             }
 
+            // Tokenizing strings
+            if (current == '"')
+            {
+                return ReadString();
+            }
+            
+            // No match :(
             return null;
         }
 
@@ -200,6 +230,23 @@ namespace lab3.Lexer
             }
 
             throw new Exception(string.Format("Unexpected num value '{0}', at line {1}, column {2}.", match, _line, _column - match.Length));
+        }
+
+        // Strings tokenization
+        private Token ReadString()
+        {
+            _position++; // Skip opening quote
+            _column++;
+            int start = _position;
+            while (_position < _input.Length && _input[_position] != '"')
+            {
+                _position++;
+                _column++;
+            }
+            string val = _input.Substring(start, _position - start);
+            _position++; // Skip closing quote
+            _column++;
+            return new Token(TokenType.STR_VALUE, $"\"{val}\"", _line, _column - val.Length - 2);
         }
     }
 }
