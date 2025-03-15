@@ -47,6 +47,7 @@
 2. Creates a new `Tokenizer` instance with the file content as input
 3. Calls the `Tokenize()` method to break down the input into a list of `Token` objects
 4. Iterates through all tokens and displays their details including token type, value, line number, and column position
+
 &ensp;&ensp;&ensp; This provides a complete view of the tokenization process, from raw input to structured tokens.
 
 ```csharp
@@ -81,6 +82,7 @@ static void Main()
 - **Type Identifiers**: Data types such as `TYPE_BATCH`, `TYPE_IMG`, `TYPE_INT`, and `TYPE_PXLS`
 - **Operators and Symbols**: Mathematical operators (`PLUS`, `MINUS`) and syntactic elements
 - **Special Tokens**: `EOL` (end-of-line) and `EOF` (end-of-file) markers
+
 &ensp;&ensp;&ensp; This comprehensive categorization allows the lexer to classify each token properly during the tokenization process.
 
 ```csharp
@@ -112,6 +114,7 @@ public enum TokenType
 - `Type`: The category of token as defined in the `TokenType` enum
 - `Value`: The actual string representation of the token in the source code
 - `Line` and `Column`: The exact position where the token appears in the source file
+
 &ensp;&ensp;&ensp; This positional data is particularly valuable for error reporting, as it allows precise location information when syntax errors occur.
 
 ```csharp
@@ -130,10 +133,11 @@ public class Token
 ```
 
 ##### The Logic Within `Tokenizer`
-&ensp;&ensp;&ensp; The `Tokenizer` class declaration establishes the core components needed for lexical analysis:
+The `Tokenizer` class declaration establishes the core components needed for lexical analysis:
 - `_input`: Stores the entire source code as a string
 - `_position`: Tracks the current character position during analysis
 - `_line` and `_column`: Keep track of the current line and column for error reporting
+
 &ensp;&ensp;&ensp; These private fields maintain the tokenizer's state as it processes the input character by character. The position tracking is essential for both token extraction and providing accurate location information.
 
 ```csharp
@@ -147,6 +151,7 @@ public class Tokenizer
 ```
 
 &ensp;&ensp;&ensp; The `NumberRegex` static field defines a regular expression pattern for identifying numeric values in the source code. It handles three different number formats: decimal numbers (`\d+\.\d+`) - e.g., `3.14`; pixel values (`\d+p`) - e.g., `42p`; Integer values (`\d+`) - e.g., `100`.
+
 &ensp;&ensp;&ensp; The `RegexOptions.Compiled` flag improves performance by compiling the regular expression once, which is beneficial since the pattern will be used repeatedly during tokenization.
 
 ```csharp
@@ -154,6 +159,7 @@ private static readonly Regex NumberRegex = new Regex(@"(\d+\.\d+|\d+p|\d+)", Re
 ```
 
 &ensp;&ensp;&ensp; The Tokenize() method’s core loop processes input text character by character, emphasizing whitespace handling to ensure accurate position tracking. It distinguishes newline characters (\n), which increment the line counter and reset the column counter, from other whitespace like spaces and tabs, which only increment the column counter, while also managing Windows-style line endings (\r\n) by skipping redundant characters for cross-platform support.
+
 &ensp;&ensp;&ensp; Whitespace is isolated from token matching with a continue statement, preventing it from being treated as a token. This separation enhances code clarity and maintainability by distinctly handling position updates and token identification.
 
 ```csharp
@@ -189,7 +195,9 @@ public List<Token> Tokenize()
 ```
 
 &ensp;&ensp;&ensp; The `Tokenize()` method contains a critical section where token matching occurs. Once the lexer has advanced past any whitespace, it attempts to identify a token at the current position by calling the `MatchToken()` method. This method performs all the pattern matching logic and returns either a valid token or null if no match is found.
+
 &ensp;&ensp;&ensp; When a token is successfully identified (not null), it's immediately added to the running list of tokens that will eventually represent the complete tokenized source code. This approach follows a sequential tokenization pattern where the input is processed from left to right, with each token being recognized and captured in order. The continuous accumulation of tokens builds up the lexical structure of the program, preserving both the semantic meaning and syntactic organization of the original source code.
+
 &ensp;&ensp;&ensp; The simplicity of this design belies its power - by delegating the complex pattern matching to a separate method, the main tokenization loop remains clean and focused solely on the process of token collection and whitespace handling. This separation of concerns ensures that the tokenizer is both maintainable and extensible, allowing for new token patterns to be added without disrupting the core tokenization process.
 
 ```csharp
@@ -205,8 +213,11 @@ public List<Token> Tokenize()
 ```
 
 &ensp;&ensp;&ensp; The `MatchToken()` method serves as the heart of the lexer, implementing a comprehensive pattern matching system for identifying tokens in the source code. It employs a hierarchical approach to token recognition, working from simple to complex patterns.
+
 &ensp;&ensp;&ensp; Initially, the method checks for single-character symbols like parentheses, commas, and basic operators, which can be identified with a simple character comparison. For multi-character operators such as `==`, `>=`, and `<=`, the method uses the `Peek()` helper function to examine the next character without advancing the position. This lookahead capability is essential for correctly distinguishing between operators like `=` (assignment) and `==` (equality comparison).
+
 &ensp;&ensp;&ensp; After handling symbols and operators, the method proceeds to more complex token types. For alphabetic characters or specific identifier symbols (`$` or `#`), it reads the entire word and passes it to `CreateWordToken()` for classification as either a reserved keyword or an identifier. For numeric characters, it invokes `MatchNumber()` to parse various numeric formats. String literals are handled by `ReadString()`, which extracts the content between quotation marks.
+
 &ensp;&ensp;&ensp; This cascading approach to token matching creates a priority system where more specific patterns are checked before more general ones. If no pattern matches the current character, the method returns null, signaling to the caller that an unrecognized character has been encountered. This design provides excellent flexibility while maintaining clean, readable code structure, making it easy to understand how each token type is identified and processed during the lexical analysis phase.
 
 ```csharp
@@ -242,7 +253,9 @@ public List<Token> Tokenize()
 ```
 
 &ensp;&ensp;&ensp; The `Advance()` method provides a fundamental mechanism for token creation while simultaneously managing the lexer's position within the input stream. It performs two essential operations in a single, concise function.
+
 &ensp;&ensp;&ensp; First, it advances both the position and column counters by one character, effectively moving the Lexer's focus to the next character in the input stream. This positional update is crucial for the sequential processing of the source code and ensures that each character is examined exactly once during tokenization. The position counter tracks the absolute position in the input string, while the column counter provides the relative position within the current line, which is reset whenever a newline character is encountered.
+
 &ensp;&ensp;&ensp; Second, the method creates and returns a new `Token` object with the specified type and value. The token's position is recorded as the current line and the previous column (calculated as `_column - 1`), which accurately reflects where the token began in the source code. This positional information is invaluable for error reporting and syntax highlighting in development environments.
 
 ```csharp
@@ -255,7 +268,9 @@ private Token Advance(TokenType type, string val)
 ```
 
 &ensp;&ensp;&ensp; The `Peek()` method provides the lexer with crucial lookahead capability, allowing it to examine upcoming characters without altering the current position or state. This function returns the character immediately following the current position, or a null character (`\0`) if the end of the input has been reached.
+
 &ensp;&ensp;&ensp; Lookahead functionality is essential for correctly identifying tokens that could begin with the same character but continue differently. For instance, distinguishing between assignment (`=`) and equality comparison (`==`) requires looking at the character after the first equals sign. Without this capability, the lexer would have to potentially backtrack after discovering that a single-character interpretation was incorrect, significantly complicating the tokenization logic.
+
 &ensp;&ensp;&ensp; The implementation elegantly handles boundary conditions by checking if the next position is within the valid range of the input string before attempting to access it. This prevents potential index-out-of-range exceptions when peeking at the last character of the input. The use of the ternary conditional operator makes the code concise while still providing complete functionality.
 
 ```csharp
@@ -266,6 +281,7 @@ private char Peek()
 ```
 
 &ensp;&ensp;&ensp; The ReadWord() method extracts word-based tokens, such as identifiers and keywords, by processing continuous sequences of letters, digits, and special symbols ($ or #). It records the starting position, advances through valid characters, and uses Substring to extract the full word once a non-word character is reached.
+
 &ensp;&ensp;&ensp; This efficient, no-backtracking approach returns the word for further classification, separating extraction from categorization. This modularity strengthens the lexical analyzer’s design by keeping concerns distinct.
 
 ```csharp
@@ -284,8 +300,11 @@ private string ReadWord()
 ```
 
 &ensp;&ensp;&ensp; The `CreateWordToken()` method serves as a semantic classifier for word tokens in the lexical analysis process. After a word has been extracted by the `ReadWord()` method, this function determines its specific token type based on language rules and creates the appropriate token object.
+
 &ensp;&ensp;&ensp; The method first attempts to classify the word as a reserved keyword using a comprehensive switch statement that compares the uppercase version of the word against all known keywords in the language. This case-insensitive comparison provides flexibility in the language syntax, allowing programmers to use keywords in any case. For each recognized keyword, a new `Token` object is created with the appropriate token type, the original word value, and the position information.
+
 &ensp;&ensp;&ensp; If the `word` doesn't match any keyword, the method checks if it's an identifier by examining its first character. In this language, identifiers are distinguished by special prefix symbols: `$` for variables and `#` for batch identifiers. If either prefix is detected, the method returns a `VAR_IDENTIFIER` token with the complete identifier.
+
 &ensp;&ensp;&ensp; Last but not least, if a `word` fails to match either a keyword or identifier pattern, the method throws an exception with detailed information about the unexpected word and its position in the source code. This strict validation ensures that only valid tokens are accepted, providing immediate feedback on syntax errors.
 
 ```csharp
@@ -311,9 +330,13 @@ private Token CreateWordToken(string word)
 ```
 
 &ensp;&ensp;&ensp; The `MatchNumber()` method handles the complex task of recognizing and classifying numerical literals in the source code. Unlike simpler tokens, numbers can appear in various formats, each requiring specific handling and classification.
+
 &ensp;&ensp;&ensp; The method leverages the predefined `NumberRegex` pattern to identify valid numeric sequences at the current position. This approach combines the power of regular expressions with the precision of position-based matching by ensuring that the match starts exactly at the current position in the input string.
+
 &ensp;&ensp;&ensp; Upon successful matching, the method extracts the complete numeric value and advances both the position and column counters by the length of the matched text. This single-step advancement is more efficient than character-by-character processing for multi-digit numbers.
+
 &ensp;&ensp;&ensp; The method then applies sophisticated classification logic to determine the specific numeric token type based on the format of the matched value. If the number ends with 'p' (e.g., "100p"), it's classified as a pixel value (`PXLS_VALUE`). If it contains a decimal point (e.g., "3.14"), it's recognized as a floating-point value (`DBL_VALUE`). Otherwise, it's classified as an integer (`INT_VALUE`). This classification allows the parser to enforce type-specific rules during the semantic analysis phase.
+
 &ensp;&ensp;&ensp; If the regular expression fails to match a valid number pattern at the current position, the method throws an exception with detailed diagnostic information. This error handling ensures that malformed numeric literals are detected early in the compilation process, providing clear feedback to the programmer about the nature and location of the syntax error.
 
 ```csharp
@@ -338,8 +361,11 @@ private Token MatchNumber()
 ```
 
 &ensp;&ensp;&ensp; The `ReadString()` method implements specialized handling for string literals, which require different processing than other token types due to their delimited nature and potential to contain various characters.
+
 &ensp;&ensp;&ensp; The method begins by advancing past the opening quotation mark and incrementing both position and column counters. This prepares the lexer to capture the content between the quotes rather than including the delimiting characters themselves.
+
 &ensp;&ensp;&ensp; After storing the starting position, the method enters a loop that continues until either the closing quotation mark is encountered or the end of the input is reached. During this loop, the position and column counters are incremented for each character within the string content. This approach allows the string to contain any characters, including those that would otherwise be interpreted as operators or keywords outside of a string context.
+
 &ensp;&ensp;&ensp; Once the closing quotation mark is detected, the method extracts the string content using the stored starting position and the current position. The method then advances past the closing quote and creates a new token of type `STR_VALUE`. Notably, the token's value includes the quotation marks (`$"\"{val}\""`) to preserve the complete string literal format, while the positional information accounts for the entire string including the quotes.
 
 ```csharp
@@ -440,14 +466,17 @@ EOF: '' at line 9, column 2
 
 
 &ensp;&ensp;&ensp; To sum up, in this laboratory work, I have successfully achieved the first step in developing a specialized domain-specific language (DSL) for batch image processing by implementing a comprehensive lexical analyzer. This scanner forms the foundation of what could become a full-fledged compiler for the `.pixil` language, designed specifically for image manipulation operations.
-The implemented tokenizer demonstrates several key achievements:
+
+&ensp;&ensp;&ensp; The implemented tokenizer demonstrates several key achievements:
 1. **Complete Grammar Support**: The lexer supports all token types defined in the grammar, including specialized tokens for image processing operations (SEPIA, BW, NEGATIVE, SHARPEN), batch processing constructs (FOREACH, IN), metadata extraction (FWIDTH, FHEIGHT), and more.
 2. **Robust Error Handling**: The implementation includes error detection mechanisms that provide precise position information (line and column numbers) when unexpected characters or symbols are encountered, greatly facilitating debugging for language users.
 3. **Efficient Position Tracking**: The tokenizer maintains accurate line and column information across multiple types of line endings (supporting both Unix and Windows formats), which is essential for proper error reporting and source mapping.
 4. **Comprehensive Token Classification**: The implementation distinguishes between various token types, including keywords, identifiers, literals (numeric, string, boolean), operators, and syntax elements, creating a well-structured token stream.
 5. **Pattern Recognition**: The scanner effectively recognizes complex patterns like numeric literals with different formats (integers, decimals, pixel values) and identifiers with special prefixes, demonstrating the power of combining regular expressions with procedural tokenization techniques.
 6. **Modular Design**: The separation of token extraction (reading) from token classification (creating) provides a clean, maintainable architecture that could be extended for future language enhancements.
+
 &ensp;&ensp;&ensp; The successful implementation of this lexer represents a significant first step toward a complete language toolchain for image processing. By correctly breaking down source code into a stream of meaningful tokens, the tokenizer provides the foundation upon which a parser can build an abstract syntax tree (AST), enabling the subsequent phases of compilation or interpretation.
+
 &ensp;&ensp;&ensp; Future work could include developing a parser, as requested in the future lab No.6, to verify the syntactic correctness of programs according to the grammar, implementing a semantic analyzer to check type consistency and other language-specific rules, and finally, creating an interpreter or code generator to execute the operations on actual image files.
 
 ## References
