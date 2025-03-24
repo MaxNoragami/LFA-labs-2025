@@ -6,12 +6,13 @@ namespace lab4
     {
         static void Main()
         {
+            // Variant 1 -- Alexei Maxim -- FAF-232
             List<string> patterns = new List<string> { @"(a|b)(c|d)E+G?", @"P(Q|R|S)T(UV|W|X)*Z+", @"1(0|1)*2(3|4){5}36" };
             
             Console.WriteLine("REGEX GENERATOR:");
             Console.WriteLine("-------------------------");
             
-            for (int i = 2; i < 3; i++)
+            for (int i = 0; i < 1; i++)
             {
                 int countOfGeneratedStrings = 0;
                 Console.WriteLine($"Pattern {i+1}: {patterns[i]}");
