@@ -17,7 +17,7 @@ namespace lab4
             RegexNode rootNode = _regexParser.ParseRegex(pattern);
             
             // Generate combinations based on the parsed tree
-            return GenerateCombinationsFromNode(rootNode); // Limit repetitions to 5
+            return GenerateCombinationsFromNode(rootNode);
         }
         
         private List<string> GenerateCombinationsFromNode(RegexNode node)
@@ -113,7 +113,7 @@ namespace lab4
                 return new List<string> { "" };
                 
             if (count == 1)
-                return new List<string>(baseStrings);
+                return [.. baseStrings];
                 
             var result = new List<string>();
             var subResults = GenerateRepetitions(baseStrings, count - 1);
