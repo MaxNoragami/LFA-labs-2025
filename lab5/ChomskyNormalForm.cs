@@ -6,7 +6,13 @@ namespace lab5
     {
         private static string GetNextAvailableLetter(Grammar grammar)
         {
-            
+            // Start from G as specified in the problem statement
+            char letter = 'G';
+            while (grammar.VN.Contains(letter.ToString()))
+            {
+                letter++;
+            }
+            return letter.ToString();
         }
 
         private static void EliminateEmptyProductions(Grammar grammar)
