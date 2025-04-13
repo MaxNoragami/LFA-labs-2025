@@ -183,7 +183,46 @@ namespace lab5
 
         private static void EliminateInaccessibleSymbols(Grammar grammar)
         {
+            // Find all accessible symbols
+            HashSet<string> accessibleSymbols = new HashSet<string> { grammar.S };
             
+            bool changed;
+            do
+            {
+                changed = false;
+                
+                foreach (var pair in grammar.P)
+                {
+                    string lhs = pair.Key;
+                    
+                    if (accessibleSymbols.Contains(lhs))
+                    {
+                        foreach (var rhs in pair.Value)
+                        {
+                            foreach (char c in rhs)
+                            {
+                                string symbol = c.ToString();
+                                
+                                if (grammar.VN.Contains(symbol) && !accessibleSymbols.Contains(symbol))
+                                {
+                                    accessibleSymbols.Add(symbol);
+                                    changed = true;
+                                }
+                            }
+                        }
+                    }
+                }
+            } while (changed);
+            
+            // Remove inaccessible symbols and their productions
+            HashSet<string> inaccessibleSymbols = new HashSet<string>(grammar.VN);
+            inaccessibleSymbols.ExceptWith(accessibleSymbols);
+            
+            foreach (var symbol in inaccessibleSymbols)
+            {
+                grammar.VN.Remove(symbol);
+                grammar.P.Remove(symbol);
+            }
         }
 
         private static void EliminateNonProdcutiveSymbols(Grammar grammar)
