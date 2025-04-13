@@ -227,7 +227,111 @@ namespace lab5
 
         private static void EliminateNonProdcutiveSymbols(Grammar grammar)
         {
+            // Find all productive symbols (non-terminals that can derive a string of terminals)
+            HashSet<string> productiveSymbols = new HashSet<string>();
             
+            // Find directly productive symbols (non-terminals that derive terminals)
+            foreach (var pair in grammar.P)
+            {
+                foreach (var rhs in pair.Value)
+                {
+                    bool allTerminals = true;
+                    
+                    foreach (char c in rhs)
+                    {
+                        if (!grammar.VT.Contains(c))
+                        {
+                            allTerminals = false;
+                            break;
+                        }
+                    }
+                    
+                    if (allTerminals)
+                    {
+                        productiveSymbols.Add(pair.Key);
+                        break;
+                    }
+                }
+            }
+            
+            // Find indirectly productive symbols
+            bool changed;
+            do
+            {
+                changed = false;
+                
+                foreach (var pair in grammar.P)
+                {
+                    string lhs = pair.Key;
+                    
+                    if (!productiveSymbols.Contains(lhs))
+                    {
+                        foreach (var rhs in pair.Value)
+                        {
+                            bool allProductive = true;
+                            
+                            foreach (char c in rhs)
+                            {
+                                string symbol = c.ToString();
+                                
+                                if (grammar.VN.Contains(symbol) && !productiveSymbols.Contains(symbol))
+                                {
+                                    allProductive = false;
+                                    break;
+                                }
+                            }
+                            
+                            if (allProductive)
+                            {
+                                productiveSymbols.Add(lhs);
+                                changed = true;
+                                break;
+                            }
+                        }
+                    }
+                }
+            } while (changed);
+            
+            // Remove non-productive symbols
+            HashSet<string> nonProductiveSymbols = new HashSet<string>(grammar.VN);
+            nonProductiveSymbols.ExceptWith(productiveSymbols);
+            
+            foreach (var symbol in nonProductiveSymbols)
+            {
+                grammar.VN.Remove(symbol);
+                grammar.P.Remove(symbol);
+            }
+            
+            // Remove productions containing non-productive symbols
+            Dictionary<string, List<string>> newP = new Dictionary<string, List<string>>();
+            
+            foreach (var pair in grammar.P)
+            {
+                newP[pair.Key] = new List<string>();
+                
+                foreach (var rhs in pair.Value)
+                {
+                    bool containsNonProductive = false;
+                    
+                    foreach (char c in rhs)
+                    {
+                        string symbol = c.ToString();
+                        
+                        if (grammar.VN.Contains(symbol) && nonProductiveSymbols.Contains(symbol))
+                        {
+                            containsNonProductive = true;
+                            break;
+                        }
+                    }
+                    
+                    if (!containsNonProductive)
+                    {
+                        newP[pair.Key].Add(rhs);
+                    }
+                }
+            }
+            
+            grammar.P = newP;
         }
 
         public static void Obtain(Grammar grammar)
