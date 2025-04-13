@@ -336,7 +336,230 @@ namespace lab5
 
         public static void Obtain(Grammar grammar)
         {
+            // If the start symbol S occurs on some RHS, create a new start symbol S* and add a new production S* -> S
+            bool needNewStartSymbol = false;
             
+            foreach (var pair in grammar.P)
+            {
+                foreach (var rhs in pair.Value)
+                {
+                    if (rhs.Contains(grammar.S))
+                    {
+                        needNewStartSymbol = true;
+                        break;
+                    }
+                }
+                
+                if (needNewStartSymbol)
+                    break;
+            }
+            
+            if (needNewStartSymbol)
+            {
+                string newStartSymbol = GetNextAvailableLetter(grammar);
+                grammar.VN.Add(newStartSymbol);
+                grammar.P[newStartSymbol] = new List<string> { grammar.S };
+                grammar.S = newStartSymbol;
+            }
+            
+            Console.WriteLine("\nGrammar after adding a new start symbol:");
+            Console.WriteLine(grammar.ToString());
+
+            // Apply the grammar cleanup steps
+            EliminateEmptyProductions(grammar);
+            Console.WriteLine("\nGrammar after eliminating empty prods:");
+            Console.WriteLine(grammar.ToString());
+
+            EliminateAnyUnitRules(grammar);
+            Console.WriteLine("\nGrammar after eliminating unit rules:");
+            Console.WriteLine(grammar.ToString());
+
+            EliminateInaccessibleSymbols(grammar);
+            Console.WriteLine("\nGrammar after eliminating inaccessible symbols:");
+            Console.WriteLine(grammar.ToString());
+
+            EliminateNonProdcutiveSymbols(grammar);
+            Console.WriteLine("\nGrammar after eliminating non-productive symbols:");
+            Console.WriteLine(grammar.ToString());
+
+            // Step 1: Replace each terminal in the RHS with a new non-terminal
+            Dictionary<char, string> terminalToNonTerminal = new Dictionary<char, string>();
+            Dictionary<string, List<string>> newP = new Dictionary<string, List<string>>();
+            
+            foreach (var pair in grammar.P)
+            {
+                string lhs = pair.Key;
+                newP[lhs] = new List<string>();
+                
+                foreach (var rhs in pair.Value)
+                {
+                    string newRhs = "";
+                    
+                    // Process each character in the RHS
+                    for (int i = 0; i < rhs.Length; i++)
+                    {
+                        char c = rhs[i];
+                        
+                        // If it's a terminal and not the only symbol in a production
+                        if (grammar.VT.Contains(c) && (rhs.Length > 1))
+                        {
+                            // Create a new non-terminal for the terminal if it doesn't exist
+                            if (!terminalToNonTerminal.ContainsKey(c))
+                            {
+                                string newNonTerminal = GetNextAvailableLetter(grammar);
+                                grammar.VN.Add(newNonTerminal);
+                                
+                                if (!newP.ContainsKey(newNonTerminal))
+                                {
+                                    newP[newNonTerminal] = new List<string>();
+                                }
+                                
+                                newP[newNonTerminal].Add(c.ToString());
+                                terminalToNonTerminal[c] = newNonTerminal;
+                            }
+                            
+                            newRhs += terminalToNonTerminal[c];
+                        }
+                        else
+                        {
+                            // Keep non-terminals or single terminals as they are
+                            newRhs += c;
+                        }
+                    }
+                    
+                    newP[lhs].Add(newRhs);
+                }
+            }
+            
+            grammar.P = newP;
+            
+            // Dictionary to map production RHS to existing non-terminals
+            Dictionary<string, string> rhsToNonTerminal = new Dictionary<string, string>();
+            
+            // Step 2: Replace productions with more than 2 symbols on the RHS with binary productions
+            newP = new Dictionary<string, List<string>>();
+            
+            foreach (var pair in grammar.P)
+            {
+                string lhs = pair.Key;
+                newP[lhs] = new List<string>();
+                
+                foreach (var rhs in pair.Value)
+                {
+                    if (rhs.Length > 2)
+                    {
+                        // Create a chain of non-terminals for the RHS
+                        string currentLhs = lhs;
+                        string remainingRhs = rhs;
+                        
+                        while (remainingRhs.Length > 2)
+                        {
+                            string firstSymbol = remainingRhs[0].ToString();
+                            string restOfRhs = remainingRhs.Substring(1);
+                            
+                            // Check if we already have a non-terminal for the rest of RHS
+                            string newNonTerminal;
+                            if (rhsToNonTerminal.ContainsKey(restOfRhs))
+                            {
+                                newNonTerminal = rhsToNonTerminal[restOfRhs];
+                            }
+                            else
+                            {
+                                newNonTerminal = GetNextAvailableLetter(grammar);
+                                grammar.VN.Add(newNonTerminal);
+                                rhsToNonTerminal[restOfRhs] = newNonTerminal;
+                                
+                                if (!newP.ContainsKey(newNonTerminal))
+                                {
+                                    newP[newNonTerminal] = new List<string>();
+                                }
+                            }
+                            
+                            // Add A -> B1C production
+                            newP[currentLhs].Add(firstSymbol + newNonTerminal);
+                            
+                            // Prepare for next iteration
+                            currentLhs = newNonTerminal;
+                            remainingRhs = remainingRhs.Substring(1);
+                            
+                            if (!newP.ContainsKey(currentLhs) && !grammar.P.ContainsKey(currentLhs))
+                            {
+                                newP[currentLhs] = new List<string>();
+                            }
+                        }
+                        
+                        // Add the final production with the last two symbols
+                        if (!newP[currentLhs].Contains(remainingRhs))
+                        {
+                            newP[currentLhs].Add(remainingRhs);
+                        }
+                    }
+                    else
+                    {
+                        // If the RHS has 2 or fewer symbols, keep it as it is
+                        newP[lhs].Add(rhs);
+                    }
+                }
+            }
+            
+            // Add any existing productions for non-terminals we're reusing
+            foreach (var nonTerminal in rhsToNonTerminal.Values)
+            {
+                if (grammar.P.ContainsKey(nonTerminal) && !newP.ContainsKey(nonTerminal))
+                {
+                    newP[nonTerminal] = new List<string>(grammar.P[nonTerminal]);
+                }
+            }
+            
+            grammar.P = newP;
+            
+            // Step 3: Final optimization to merge duplicate right-hand sides
+            Dictionary<string, List<string>> finalP = new Dictionary<string, List<string>>();
+            Dictionary<string, string> productionToNonTerminal = new Dictionary<string, string>();
+            
+            // Build a mapping of unique productions to non-terminals
+            foreach (var pair in grammar.P)
+            {
+                string lhs = pair.Key;
+                
+                if (!finalP.ContainsKey(lhs))
+                {
+                    finalP[lhs] = new List<string>();
+                }
+                
+                foreach (var rhs in pair.Value)
+                {
+                    // For two-symbol productions, check if we can reuse an existing non-terminal
+                    if (rhs.Length == 2)
+                    {
+                        if (productionToNonTerminal.ContainsKey(rhs))
+                        {
+                            if (!finalP[lhs].Contains(rhs))
+                            {
+                                finalP[lhs].Add(rhs);
+                            }
+                        }
+                        else
+                        {
+                            productionToNonTerminal[rhs] = lhs;
+                            if (!finalP[lhs].Contains(rhs))
+                            {
+                                finalP[lhs].Add(rhs);
+                            }
+                        }
+                    }
+                    else
+                    {
+                        // For single symbol productions, we just add them
+                        if (!finalP[lhs].Contains(rhs))
+                        {
+                            finalP[lhs].Add(rhs);
+                        }
+                    }
+                }
+            }
+            
+            grammar.P = finalP;
         }
     }
 }
