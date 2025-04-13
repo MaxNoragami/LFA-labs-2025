@@ -118,7 +118,67 @@ namespace lab5
 
         private static void EliminateAnyUnitRules(Grammar grammar)
         {
+            // Dictionary to store the set of non-terminals that can be derived from each non-terminal through unit productions
+            Dictionary<string, HashSet<string>> unitDerivations = new Dictionary<string, HashSet<string>>();
             
+            // Initialize unitDerivations for each non-terminal
+            foreach (var nonTerminal in grammar.VN)
+            {
+                unitDerivations[nonTerminal] = new HashSet<string> { nonTerminal };
+            }
+            
+            // Compute the transitive closure of unit productions
+            bool changed;
+            do
+            {
+                changed = false;
+                
+                foreach (var pair in grammar.P)
+                {
+                    string lhs = pair.Key;
+                    
+                    foreach (var rhs in pair.Value)
+                    {
+                        // If rhs is a single non-terminal (unit production)
+                        if (rhs.Length == 1 && grammar.VN.Contains(rhs))
+                        {
+                            foreach (var derived in unitDerivations[rhs])
+                            {
+                                if (!unitDerivations[lhs].Contains(derived))
+                                {
+                                    unitDerivations[lhs].Add(derived);
+                                    changed = true;
+                                }
+                            }
+                        }
+                    }
+                }
+            } while (changed);
+            
+            // Replace unit productions
+            Dictionary<string, List<string>> newP = new Dictionary<string, List<string>>();
+            
+            foreach (var lhs in grammar.VN)
+            {
+                newP[lhs] = new List<string>();
+                
+                foreach (var derivedNT in unitDerivations[lhs])
+                {
+                    foreach (var rhs in grammar.P[derivedNT])
+                    {
+                        // If it's not a unit production
+                        if (!(rhs.Length == 1 && grammar.VN.Contains(rhs)))
+                        {
+                            if (!newP[lhs].Contains(rhs))
+                            {
+                                newP[lhs].Add(rhs);
+                            }
+                        }
+                    }
+                }
+            }
+            
+            grammar.P = newP;
         }
 
         private static void EliminateInaccessibleSymbols(Grammar grammar)
