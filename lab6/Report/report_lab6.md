@@ -35,7 +35,7 @@ Key characteristics of ASTs include:
 Considering the expression `3 * (4 + 5)`. A simplified AST might look like:
 
 ```
-	*
+    *
    / \
   3   +
      / \
